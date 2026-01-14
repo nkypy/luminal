@@ -7,6 +7,7 @@ edition = "2024"
 luminal = { path = "../.." }
 luminal_nn = { path = "../../crates/luminal_nn" }
 luminal_tracing = { path = "../../crates/luminal_tracing" }
+rwkv-tokenizer = "0.9.1"
 
 luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
 

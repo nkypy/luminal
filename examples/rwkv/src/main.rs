@@ -17,6 +17,8 @@ fn main() {
         ))
         .init();
 
+    let tokenizer = rwkv_tokenizer::WorldTokenizer::new(None).unwrap();
+
     // Create compute graph
     let mut cx = Graph::default();
 
