@@ -38,8 +38,8 @@ pub struct Graph {
 
 impl Graph {
     /// Create a new graph
-    pub fn new() -> Graph {
-        Graph::default()
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Set a runtime dimension

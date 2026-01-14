@@ -42,3 +42,36 @@ impl LayerNorm {
         input
     }
 }
+
+#[derive(Default)]
+pub struct GroupNorm {
+    pub weight: Option<GraphTensor>,
+    pub bias: Option<GraphTensor>,
+    pub eps: f64,
+    pub num_channels: usize,
+    pub num_groups: usize,
+}
+
+impl GroupNorm {
+    pub fn new(
+        num_channels: usize,
+        num_groups: usize,
+        weight: Option<&str>,
+        bias: Option<&str>,
+        eps: f64,
+        cx: &mut Graph,
+    ) -> Self {
+        Self {
+            weight: weight.map(|w| cx.named_tensor(w, num_channels)),
+            bias: bias.map(|b| cx.named_tensor(b, num_channels)),
+            eps,
+            num_channels,
+            num_groups,
+        }
+    }
+
+    pub fn forward(&self, mut input: GraphTensor) -> GraphTensor {
+        // TODO
+        input
+    }
+}

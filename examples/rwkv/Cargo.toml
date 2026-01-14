@@ -1,0 +1,8 @@
+[package]
+name = "rwkv"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+luminal = { path = "../.." }
+luminal_nn = { path = "../../crates/luminal_nn" }

@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::{fmt::Debug, sync::Arc};
 
 use crate::op::OpParam::*;
@@ -6,9 +7,11 @@ use crate::prelude::*;
 
 use as_any::AsAny;
 use itertools::Itertools;
+use memmap2::MmapOptions;
 use num_traits::Float;
 use petgraph::{Direction, algo::toposort, prelude::StableGraph, visit::EdgeRef};
 use rustc_hash::FxHashMap;
+use safetensors::SafeTensors;
 use tracing::info_span;
 
 pub type HLIROps = (
@@ -1458,6 +1461,32 @@ pub struct NativeRuntime {
 }
 
 impl NativeRuntime {
+    #[tracing::instrument(skip_all)]
+    pub fn load_safetensors(&mut self, cx: &Graph, file_path: &str) {
+        let f = File::open(file_path).unwrap();
+        let mmap = unsafe { MmapOptions::new().map(&f).unwrap() };
+        let st = SafeTensors::deserialize(&mmap).unwrap();
+        for node in cx.graph.node_indices() {
+            if let Some(Input { label, .. }) = (*cx.graph[node]).as_any().downcast_ref::<Input>() {
+                if let Ok(tensor) = st.tensor(label) {
+                    match tensor.dtype() {
+                        safetensors::Dtype::F32 => {
+                            let bytes = tensor.data();
+                            let f32s: &[f32] = bytemuck::cast_slice(bytes);
+                            self.buffers.insert(node, NativeData::F32(f32s.to_vec()));
+                        }
+                        safetensors::Dtype::F16 => {
+                            let bytes = tensor.data();
+                            let f16s: &[f16] = bytemuck::cast_slice(bytes);
+                            self.buffers.insert(node, NativeData::F16(f16s.to_vec()));
+                        }
+                        dtype => unimplemented!("{dtype} loading not supported yet"),
+                    }
+                }
+            }
+        }
+    }
+
     pub fn set_data(&mut self, id: impl ToId, data: impl Into<NativeData>) {
         let id = id.to_id();
         let local_id = self
