@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 luminal = { path = "../.." }
 luminal_nn = { path = "../../crates/luminal_nn" }
+luminal_tracing = { path = "../../crates/luminal_tracing" }

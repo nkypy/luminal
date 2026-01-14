@@ -5,19 +5,30 @@ mod model;
 use model::rwkv7::Model;
 
 fn main() {
+    // Set up tracing to perfetto
+    let _trace_session = luminal_tracing::subscriber()
+        .perfetto("trace.pftrace")
+        .env_filter(format!(
+            "{}=trace,luminal=trace,luminal_cuda=trace",
+            env!("CARGO_PKG_NAME")
+        ))
+        .init();
+
     // Create compute graph
     let mut cx = Graph::default();
 
     let input = cx.named_tensor("input", 's').as_dtype(DType::Int);
     let model = Model::init(&mut cx);
-    println!("Model init...");
+    println!("Init model...");
     let logits = model.forward(input).output();
 
-    // Compile
+    // Build search space
+    println!("Building E-Graph...");
     cx.build_search_space::<NativeRuntime>();
 
+    // Load model weights from safetensors file
+    println!("Loading weights...");
     let mut rt = NativeRuntime::default();
-
     rt.load_safetensors(
         &cx,
         "/Users/tajan/codes/RWKV7_Pytorh/rwkv7-g1a-0.1b-20250728-ctx4096.safetensors",
@@ -31,7 +42,6 @@ fn main() {
 
     println!("Executing...");
     rt.execute(&cx.dyn_map);
-
     // Get output tensor
     println!("Result: {:?}", rt.get_f32(logits));
 }

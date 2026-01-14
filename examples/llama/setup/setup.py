@@ -10,7 +10,7 @@
 # ]
 # ///
 
-import json
+# import json
 from pathlib import Path
 
 import torch
@@ -25,11 +25,7 @@ def download_model_files(repo_id: str, output_dir: Path):
 
     files_to_download = []
     for file in all_files:
-        if (
-            file == "tokenizer.json"
-            or file.endswith(".safetensors")
-            or file == "model.safetensors.index.json"
-        ):
+        if file == "tokenizer.json" or file.endswith(".safetensors"):
             files_to_download.append(file)
 
     print(f"Found {len(files_to_download)} files to download")
@@ -56,15 +52,16 @@ def combine_and_convert_safetensors_to_fp32(model_dir: Path):
         print("Skipping combine+convert step.")
         return
 
-    index_path = model_dir / "model.safetensors.index.json"
-    if not index_path.exists():
-        raise FileNotFoundError(f"Missing index file: {index_path}")
+    # index_path = model_dir / "model.safetensors.index.json"
+    # if not index_path.exists():
+    #     raise FileNotFoundError(f"Missing index file: {index_path}")
 
-    with open(index_path, "r") as f:
-        index = json.load(f)
+    # with open(index_path, "r") as f:
+    #     index = json.load(f)
 
-    weight_map = index.get("weight_map", {})
-    shard_files = sorted(set(weight_map.values()))
+    # weight_map = index.get("weight_map", {})
+    # shard_files = sorted(set(weight_map.values()))
+    shard_files = ["model.safetensors"]
 
     # Stream through shards; convert tensors to fp32 as we read.
     all_tensors = {}
@@ -90,7 +87,7 @@ def combine_and_convert_safetensors_to_fp32(model_dir: Path):
 
 if __name__ == "__main__":
     script_dir = Path(__file__).parent
-    repo_id = "NousResearch/Meta-Llama-3-8B-Instruct"
+    repo_id = "llamafactory/tiny-random-Llama-3"
 
     download_model_files(repo_id, script_dir)
 
