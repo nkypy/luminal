@@ -7,3 +7,9 @@ edition = "2024"
 luminal = { path = "../.." }
 luminal_nn = { path = "../../crates/luminal_nn" }
 luminal_tracing = { path = "../../crates/luminal_tracing" }
+
+luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
+
+[features]
+default = []
+cuda = ["dep:luminal_cuda"]

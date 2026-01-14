@@ -1,5 +1,8 @@
 use luminal::prelude::*;
 
+#[cfg(feature = "cuda")]
+use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
+
 mod model;
 
 use model::rwkv7::Model;
@@ -24,10 +27,20 @@ fn main() {
 
     // Build search space
     println!("Building E-Graph...");
+    #[cfg(feature = "cuda")]
+    cx.build_search_space::<CudaRuntime>();
+    #[cfg(not(feature = "cuda"))]
     cx.build_search_space::<NativeRuntime>();
 
     // Load model weights from safetensors file
     println!("Loading weights...");
+    #[cfg(feature = "cuda")]
+    let mut rt = {
+        let ctx = CudaContext::new(0).unwrap();
+        let stream = ctx.default_stream();
+        CudaRuntime::initialize(stream)
+    };
+    #[cfg(not(feature = "cuda"))]
     let mut rt = NativeRuntime::default();
     rt.load_safetensors(
         &cx,
