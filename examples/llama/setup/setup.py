@@ -6,7 +6,8 @@
 #     "torch",
 #     "packaging",
 #     "numpy",
-#     "huggingface-hub"
+#     "huggingface-hub",
+#     "httpx[socks]",
 # ]
 # ///
 

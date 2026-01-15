@@ -47,7 +47,7 @@ fn main() {
     let mut rt = NativeRuntime::default();
 
     println!("Compiling...");
-    rt = cx.search(rt, 1);
+    rt = cx.search(rt, 5);
 
     println!("Loading weights...");
     rt.load_safetensors(&cx, "setup/model_combined.safetensors");

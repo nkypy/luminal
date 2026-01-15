@@ -55,8 +55,6 @@ pub struct Block {
 impl Block {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
         let pre_ln = if layer_id == 0 {
-            None
-        } else {
             Some(LayerNorm::new(
                 HIDDEN,
                 Some(&format!("rwkv.blocks.{layer_id}.pre_ln.weight")),
@@ -65,6 +63,8 @@ impl Block {
                 1e-5,
                 cx,
             ))
+        } else {
+            None
         };
         let ln1 = LayerNorm::new(
             HIDDEN,
@@ -94,7 +94,7 @@ impl Block {
     }
 
     pub fn forward(&self, x: GraphTensor) -> GraphTensor {
-        // let x = self.pre_ln.as_ref().map(|ln| ln.forward(x)).unwrap_or(x);
+        let x = self.pre_ln.as_ref().map(|ln| ln.forward(x)).unwrap_or(x);
         let x = self.ln1.forward(x);
         // let x = self.attention.forward(x);
         let x = self.ln2.forward(x);
