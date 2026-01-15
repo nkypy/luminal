@@ -46,7 +46,7 @@ fn main() {
     let mut rt = NativeRuntime::default();
     rt.load_safetensors(
         &cx,
-        "/Users/tajan/codes/RWKV7_Pytorh/rwkv7-g1a-0.1b-20250728-ctx4096.safetensors",
+        "setup/model_combined.safetensors",
     );
 
     println!("Compiling...");
