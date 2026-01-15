@@ -17,8 +17,9 @@ fn main() {
     let mut cx = Graph::default();
 
     let input = cx.named_tensor("input", (1, 1)).as_dtype(DType::Int);
+
+    println!("Initializing model...");
     let model = Model::init(&mut cx);
-    println!("Init model...");
     let logits = model.forward(input).output();
 
     // Build search space
@@ -53,10 +54,6 @@ fn main() {
     rt.load_safetensors(&cx, "setup/model_combined.safetensors");
 
     rt.set_data(input, vec![1]);
-
-    for i in rt.buffers.keys() {
-        println!("{:?}", i);
-    }
 
     println!("Executing...");
     rt.execute(&cx.dyn_map);
