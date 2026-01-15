@@ -3,8 +3,9 @@ use luminal_nn::{GroupNorm, LayerNorm, Linear};
 
 const HIDDEN: usize = 768;
 const VOCAB_SIZE: usize = 65536;
-const NUM_BLOCKS: usize = 12;
 const HEAD: usize = 64;
+const NUM_LAYERS: usize = 12;
+const EPSILON: f32 = 1e-5;
 
 pub struct Model {
     // embeddings: Embedding,
@@ -17,13 +18,13 @@ pub struct Model {
 impl Model {
     pub fn init(cx: &mut Graph) -> Self {
         let embeddings = cx.named_tensor("rwkv.embeddings.weight", (VOCAB_SIZE, HIDDEN));
-        let blocks = (0..NUM_BLOCKS).map(|i| Block::init(i, cx)).collect();
+        let blocks = (0..NUM_LAYERS).map(|i| Block::init(i, cx)).collect();
         let ln_out = LayerNorm::new(
             HIDDEN,
             Some("rwkv.ln_out.weight"),
             Some("rwkv.ln_out.bias"),
             false,
-            1e-5,
+            EPSILON,
             cx,
         );
         let head = Linear::new(VOCAB_SIZE, HIDDEN, "head.weight", None, cx);
@@ -63,7 +64,7 @@ impl Block {
                 Some(&format!("{prefix}.pre_ln.weight")),
                 Some(&format!("{prefix}.pre_ln.bias")),
                 false,
-                1e-5,
+                EPSILON,
                 cx,
             ))
         } else {
@@ -74,7 +75,7 @@ impl Block {
             Some(&format!("{prefix}.ln1.weight")),
             Some(&format!("{prefix}.ln1.bias")),
             false,
-            1e-5,
+            EPSILON,
             cx,
         );
         let ln2 = LayerNorm::new(
@@ -82,7 +83,7 @@ impl Block {
             Some(&format!("{prefix}.ln2.weight")),
             Some(&format!("{prefix}.ln2.bias")),
             false,
-            1e-5,
+            EPSILON,
             cx,
         );
         let attention = SelfAttention::init(layer_id, cx);
@@ -131,7 +132,7 @@ pub struct SelfAttention {
     key: Linear,
     value: Linear,
     output: Linear,
-    // ln_x: GroupNorm,
+    ln_x: GroupNorm,
 }
 
 impl SelfAttention {
@@ -144,7 +145,7 @@ impl SelfAttention {
         let x_v = cx.named_tensor(&format!("{prefix}.x_v"), (1, 1, HIDDEN));
         let x_a = cx.named_tensor(&format!("{prefix}.x_a"), (1, 1, HIDDEN));
         let x_g = cx.named_tensor(&format!("{prefix}.x_g"), (1, 1, HIDDEN));
-        let r_k = cx.named_tensor(&format!("{prefix}.r_k"), (NUM_BLOCKS, HEAD));
+        let r_k = cx.named_tensor(&format!("{prefix}.r_k"), (HIDDEN / HEAD, HEAD));
         let w0 = cx.named_tensor(&format!("{prefix}.w0"), (1, 1, HIDDEN));
         let w1 = cx.named_tensor(&format!("{prefix}.w1"), (HIDDEN, HEAD));
         let w2 = cx.named_tensor(&format!("{prefix}.w2"), (HEAD, HIDDEN));
@@ -180,14 +181,14 @@ impl SelfAttention {
         let key = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.key.weight"), None, cx);
         let value = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.value.weight"), None, cx);
         let output = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.output.weight"), None, cx);
-        // let ln_x = GroupNorm::new(
-        //     HIDDEN,
-        //     Some(&format!("rwkv.blocks.{layer_id}.ln_x.weight")),
-        //     Some(&format!("rwkv.blocks.{layer_id}.ln_x.bias")),
-        //     false,
-        //     1e-5,
-        //     cx,
-        // );
+        let ln_x = GroupNorm::new(
+            HIDDEN,
+            HEAD,
+            Some(&format!("{prefix}.ln_x.weight")),
+            Some(&format!("{prefix}.ln_x.bias")),
+            EPSILON as f64,
+            cx,
+        );
         Self {
             x_r,
             x_w,
@@ -213,7 +214,7 @@ impl SelfAttention {
             key,
             value,
             output,
-            // ln_x,
+            ln_x,
         }
     }
 

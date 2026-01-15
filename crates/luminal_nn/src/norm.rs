@@ -70,8 +70,7 @@ impl GroupNorm {
         }
     }
 
-    pub fn forward(&self, mut input: GraphTensor) -> GraphTensor {
-        // TODO
-        input
+    pub fn forward(&self, _input: GraphTensor) -> GraphTensor {
+        todo!()
     }
 }
