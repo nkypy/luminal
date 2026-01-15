@@ -55,11 +55,13 @@ pub struct Block {
 
 impl Block {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
+        let prefix = format!("rwkv.blocks.{layer_id}");
+
         let pre_ln = if layer_id == 0 {
             Some(LayerNorm::new(
                 HIDDEN,
-                Some(&format!("rwkv.blocks.{layer_id}.pre_ln.weight")),
-                Some(&format!("rwkv.blocks.{layer_id}.pre_ln.bias")),
+                Some(&format!("{prefix}.pre_ln.weight")),
+                Some(&format!("{prefix}.pre_ln.bias")),
                 false,
                 1e-5,
                 cx,
@@ -69,16 +71,16 @@ impl Block {
         };
         let ln1 = LayerNorm::new(
             HIDDEN,
-            Some(&format!("rwkv.blocks.{layer_id}.ln1.weight")),
-            Some(&format!("rwkv.blocks.{layer_id}.ln1.bias")),
+            Some(&format!("{prefix}.ln1.weight")),
+            Some(&format!("{prefix}.ln1.bias")),
             false,
             1e-5,
             cx,
         );
         let ln2 = LayerNorm::new(
             HIDDEN,
-            Some(&format!("rwkv.blocks.{layer_id}.ln2.weight")),
-            Some(&format!("rwkv.blocks.{layer_id}.ln2.bias")),
+            Some(&format!("{prefix}.ln2.weight")),
+            Some(&format!("{prefix}.ln2.bias")),
             false,
             1e-5,
             cx,
@@ -135,6 +137,7 @@ pub struct SelfAttention {
 impl SelfAttention {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
         let prefix = format!("rwkv.blocks.{layer_id}.attention");
+
         let x_r = cx.named_tensor(&format!("{prefix}.x_r"), (1, 1, HIDDEN));
         let x_w = cx.named_tensor(&format!("{prefix}.x_w"), (1, 1, HIDDEN));
         let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
@@ -252,6 +255,7 @@ pub struct FeedForward {
 impl FeedForward {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
         let prefix = format!("rwkv.blocks.{layer_id}.feed_forward");
+
         let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
         let key = Linear::new(
             HIDDEN * 4,
