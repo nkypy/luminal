@@ -1575,7 +1575,17 @@ impl Runtime for NativeRuntime {
                 .graph
                 .edges_directed(node, Direction::Incoming)
                 .sorted_by_key(|e| e.id())
-                .map(|e| &self.buffers[&e.source()])
+                .map(|e| {
+                    if !self.buffers.contains_key(&e.source()) {
+                        panic!(
+                            "Node {:?} tried to read input from Node {:?} which is not in buffers. Available buffers: {:?}",
+                            node,
+                            e.source(),
+                            self.buffers.keys().collect_vec()
+                        );
+                    }
+                    &self.buffers[&e.source()]
+                })
                 .collect_vec();
             let output = self.graph[node].execute(inputs, dyn_map);
             self.buffers.insert(node, output);

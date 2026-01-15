@@ -43,6 +43,10 @@ fn main() {
 
     rt.set_data(input, vec![1]);
 
+    for i in rt.buffers.keys() {
+        println!("{:?}", i);
+    }
+
     println!("Executing...");
     rt.execute(&cx.dyn_map);
     // Get output tensor
