@@ -1,6 +1,9 @@
 use luminal::prelude::*;
 
+// cfg not, any, all
 #[cfg(feature = "cuda")]
+use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
+#[cfg(all(feature = "metal", not(feature = "cuda")))]
 use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
 
 mod model;
@@ -22,7 +25,9 @@ fn main() {
     println!("Building E-Graph...");
     #[cfg(feature = "cuda")]
     cx.build_search_space::<CudaRuntime>();
-    #[cfg(not(feature = "cuda"))]
+    #[cfg(all(feature = "metal", not(feature = "cuda")))]
+    cx.build_search_space::<CudaRuntime>();
+    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
     cx.build_search_space::<NativeRuntime>();
 
     // Load model weights from safetensors file
@@ -32,7 +37,13 @@ fn main() {
         let stream = ctx.default_stream();
         CudaRuntime::initialize(stream)
     };
-    #[cfg(not(feature = "cuda"))]
+    #[cfg(all(feature = "metal", not(feature = "cuda")))]
+    let mut rt = {
+        let ctx = CudaContext::new(0).unwrap();
+        let stream = ctx.default_stream();
+        CudaRuntime::initialize(stream)
+    };
+    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
     let mut rt = NativeRuntime::default();
 
     println!("Compiling...");

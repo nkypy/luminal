@@ -8,9 +8,11 @@ luminal = { path = "../.." }
 luminal_nn = { path = "../../crates/luminal_nn" }
 luminal_tracing = { path = "../../crates/luminal_tracing" }
 rwkv-tokenizer = "0.9.1"
-
+# CUDA
 luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
+# Metal (TODO)
 
 [features]
 default = []
 cuda = ["dep:luminal_cuda"]
+metal = ["dep:luminal_cuda"] # TODO
