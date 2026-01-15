@@ -11,7 +11,7 @@ pub struct Model {
     embeddings: GraphTensor,
     blocks: Vec<Block>,
     ln_out: LayerNorm,
-    // head: Linear,
+    head: Linear,
 }
 
 impl Model {
@@ -26,12 +26,12 @@ impl Model {
             1e-5,
             cx,
         );
-        // let head = Linear::new(VOCAB_SIZE, HIDDEN, false, cx);
+        let head = Linear::new(VOCAB_SIZE, HIDDEN, "head.weight", None, cx);
         Self {
             embeddings,
             blocks,
             ln_out,
-            // head,
+            head,
         }
     }
 
@@ -40,7 +40,8 @@ impl Model {
         for block in &self.blocks {
             x = block.forward(x);
         }
-        self.ln_out.forward(x)
+        x = self.ln_out.forward(x);
+        self.head.forward(x)
     }
 }
 
@@ -98,7 +99,7 @@ impl Block {
         let x = self.ln1.forward(x);
         // let x = self.attention.forward(x);
         let x = self.ln2.forward(x);
-        // let x = self.feed_forward.forward(x);
+        let x = self.feed_forward.forward(x);
         x
     }
 }
@@ -124,51 +125,58 @@ pub struct SelfAttention {
     v2: Option<GraphTensor>,
     k_k: GraphTensor,
     k_a: GraphTensor,
-    // receptance: Linear,
-    // key: Linear,
-    // value: Linear,
-    // output: Linear,
+    receptance: Linear,
+    key: Linear,
+    value: Linear,
+    output: Linear,
     // ln_x: GroupNorm,
 }
 
 impl SelfAttention {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
-        let x_r = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_r"), (1, 1, HIDDEN));
-        let x_w = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_w"), (1, 1, HIDDEN));
-        let x_k = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_k"), (1, 1, HIDDEN));
-        let x_v = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_v"), (1, 1, HIDDEN));
-        let x_a = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_a"), (1, 1, HIDDEN));
-        let x_g = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_g"), (1, 1, HIDDEN));
-        let r_k = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.r_k"), (NUM_BLOCKS, HEAD));
-        let w0 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.w0"), (1, 1, HIDDEN));
-        let w1 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.w1"), (HIDDEN, HEAD));
-        let w2 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.w2"), (HEAD, HIDDEN));
-        let a0 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.a0"), (1, 1, HIDDEN));
-        let a1 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.a1"), (HIDDEN, HEAD));
-        let a2 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.a2"), (HEAD, HIDDEN));
-        let g1 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.g1"), (HIDDEN, HEAD * 2));
-        let g2 = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.g2"), (HEAD * 2, HIDDEN));
+        let prefix = format!("rwkv.blocks.{layer_id}.attention");
+        let x_r = cx.named_tensor(&format!("{prefix}.x_r"), (1, 1, HIDDEN));
+        let x_w = cx.named_tensor(&format!("{prefix}.x_w"), (1, 1, HIDDEN));
+        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
+        let x_v = cx.named_tensor(&format!("{prefix}.x_v"), (1, 1, HIDDEN));
+        let x_a = cx.named_tensor(&format!("{prefix}.x_a"), (1, 1, HIDDEN));
+        let x_g = cx.named_tensor(&format!("{prefix}.x_g"), (1, 1, HIDDEN));
+        let r_k = cx.named_tensor(&format!("{prefix}.r_k"), (NUM_BLOCKS, HEAD));
+        let w0 = cx.named_tensor(&format!("{prefix}.w0"), (1, 1, HIDDEN));
+        let w1 = cx.named_tensor(&format!("{prefix}.w1"), (HIDDEN, HEAD));
+        let w2 = cx.named_tensor(&format!("{prefix}.w2"), (HEAD, HIDDEN));
+        let a0 = cx.named_tensor(&format!("{prefix}.a0"), (1, 1, HIDDEN));
+        let a1 = cx.named_tensor(&format!("{prefix}.a1"), (HIDDEN, HEAD));
+        let a2 = cx.named_tensor(&format!("{prefix}.a2"), (HEAD, HIDDEN));
+        let g1 = cx.named_tensor(&format!("{prefix}.g1"), (HIDDEN, HEAD * 2));
+        let g2 = cx.named_tensor(&format!("{prefix}.g2"), (HEAD * 2, HIDDEN));
         let v0 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("rwkv.blocks.{layer_id}.v0"), (1, 1, HIDDEN)))
+            Some(cx.named_tensor(&format!("{prefix}.v0"), (1, 1, HIDDEN)))
         };
         let v1 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("rwkv.blocks.{layer_id}.v1"), (HIDDEN, HEAD / 2)))
+            Some(cx.named_tensor(&format!("{prefix}.v1"), (HIDDEN, HEAD / 2)))
         };
         let v2 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("rwkv.blocks.{layer_id}.v2"), (HEAD / 2, HIDDEN)))
+            Some(cx.named_tensor(&format!("{prefix}.v2"), (HEAD / 2, HIDDEN)))
         };
-        let k_k = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.k_k"), (1, 1, HIDDEN));
-        let k_a = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.k_a"), (1, 1, HIDDEN));
-        // let receptance = Linear::new(HIDDEN, HIDDEN, false, cx);
-        // let key = Linear::new(HIDDEN, HIDDEN, false, cx);
-        // let value = Linear::new(HIDDEN, HIDDEN, false, cx);
-        // let output = Linear::new(HIDDEN, HIDDEN, false, cx);
+        let k_k = cx.named_tensor(&format!("{prefix}.k_k"), (1, 1, HIDDEN));
+        let k_a = cx.named_tensor(&format!("{prefix}.k_a"), (1, 1, HIDDEN));
+        let receptance = Linear::new(
+            HIDDEN,
+            HIDDEN,
+            &format!("{prefix}.receptance.weight"),
+            None,
+            cx,
+        );
+        let key = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.key.weight"), None, cx);
+        let value = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.value.weight"), None, cx);
+        let output = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.output.weight"), None, cx);
         // let ln_x = GroupNorm::new(
         //     HIDDEN,
         //     Some(&format!("rwkv.blocks.{layer_id}.ln_x.weight")),
@@ -198,10 +206,10 @@ impl SelfAttention {
             v2,
             k_k,
             k_a,
-            // receptance,
-            // key,
-            // value,
-            // output,
+            receptance,
+            key,
+            value,
+            output,
             // ln_x,
         }
     }
@@ -237,16 +245,29 @@ impl SelfAttention {
 
 pub struct FeedForward {
     x_k: GraphTensor,
-    // key: Linear,
-    // value: Linear,
+    key: Linear,
+    value: Linear,
 }
 
 impl FeedForward {
     pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
-        let x_k = cx.named_tensor(&format!("rwkv.blocks.{layer_id}.x_k"), (1, 1, HIDDEN));
-        // let key = Linear::new(HIDDEN, HIDDEN, false, cx);
-        // let value = Linear::new(HIDDEN, HIDDEN, false, cx);
-        Self { x_k }
+        let prefix = format!("rwkv.blocks.{layer_id}.feed_forward");
+        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
+        let key = Linear::new(
+            HIDDEN * 4,
+            HIDDEN,
+            &format!("{prefix}.key.weight"),
+            None,
+            cx,
+        );
+        let value = Linear::new(
+            HIDDEN,
+            HIDDEN * 4,
+            &format!("{prefix}.value.weight"),
+            None,
+            cx,
+        );
+        Self { x_k, key, value }
     }
 
     pub fn forward(&self, x: GraphTensor) -> GraphTensor {
