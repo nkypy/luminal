@@ -1469,16 +1469,31 @@ impl NativeRuntime {
         for node in cx.graph.node_indices() {
             if let Some(Input { label, .. }) = (*cx.graph[node]).as_any().downcast_ref::<Input>() {
                 if let Ok(tensor) = st.tensor(label) {
+                    let local_id = self
+                        .graph
+                        .node_indices()
+                        .find(|n| {
+                            if let Some(Input { node: ref_node, .. }) =
+                                (**self.graph[*n]).as_any().downcast_ref::<Input>()
+                            {
+                                *ref_node == node.index()
+                            } else {
+                                false
+                            }
+                        })
+                        .unwrap();
                     match tensor.dtype() {
                         safetensors::Dtype::F32 => {
                             let bytes = tensor.data();
                             let f32s: &[f32] = bytemuck::cast_slice(bytes);
-                            self.buffers.insert(node, NativeData::F32(f32s.to_vec()));
+                            self.buffers
+                                .insert(local_id, NativeData::F32(f32s.to_vec()));
                         }
                         safetensors::Dtype::F16 => {
                             let bytes = tensor.data();
                             let f16s: &[f16] = bytemuck::cast_slice(bytes);
-                            self.buffers.insert(node, NativeData::F16(f16s.to_vec()));
+                            self.buffers
+                                .insert(local_id, NativeData::F16(f16s.to_vec()));
                         }
                         dtype => unimplemented!("{dtype} loading not supported yet"),
                     }
