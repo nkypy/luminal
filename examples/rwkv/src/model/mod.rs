@@ -26,10 +26,17 @@ impl State {
     pub fn init(cx: &mut Graph, cfg: &Config) -> Self {
         let mut per_layer = Vec::with_capacity(cfg.num_hidden_layers);
         let num_attention_heads = cfg.hidden_size / cfg.head_size;
-        for _idx in 0..cfg.num_hidden_layers {
-            let extract_key_value = cx.tensor((1, cfg.hidden_size));
-            let linear_attention = cx.tensor((num_attention_heads, cfg.head_size, cfg.head_size));
-            let feed_forward = cx.tensor((1, cfg.hidden_size));
+        for layer_id in 0..cfg.num_hidden_layers {
+            let prefix = format!("state.{layer_id}");
+
+            let extract_key_value =
+                cx.named_tensor(&format!("{prefix}.extract_key_value"), (1, cfg.hidden_size));
+            let linear_attention = cx.named_tensor(
+                &format!("{prefix}.linear_attention"),
+                (num_attention_heads, cfg.head_size, cfg.head_size),
+            );
+            let feed_forward =
+                cx.named_tensor(&format!("{prefix}.feed_forward"), (1, cfg.hidden_size));
             per_layer.push(StatePerLayer {
                 extract_key_value,
                 linear_attention,

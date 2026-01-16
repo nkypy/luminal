@@ -62,6 +62,18 @@ fn main() {
 
     rt.set_data(input, vec![1]);
 
+    // for i in 0..state.per_layer.len() {
+    //     rt.set_data(
+    //         state.per_layer[i].extract_key_value,
+    //         vec![0.0; cfg.hidden_size],
+    //     );
+    //     rt.set_data(
+    //         state.per_layer[i].linear_attention,
+    //         vec![0.0; cfg.hidden_size * cfg.head_size * cfg.head_size],
+    //     );
+    //     rt.set_data(state.per_layer[i].feed_forward, vec![0.0; cfg.hidden_size]);
+    // }
+
     println!("Executing...");
     rt.execute(&cx.dyn_map);
     // Get output tensor
