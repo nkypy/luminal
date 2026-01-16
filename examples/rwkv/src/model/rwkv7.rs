@@ -1,12 +1,9 @@
 use luminal::prelude::*;
 use luminal_nn::{GroupNorm, LayerNorm, Linear};
 
-use super::State;
+use super::{Config, State};
 
-const HIDDEN: usize = 768;
 const VOCAB_SIZE: usize = 65536;
-const HEAD: usize = 64;
-const NUM_LAYERS: usize = 12;
 const EPSILON: f32 = 1e-5;
 
 pub struct Model {
@@ -18,18 +15,20 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn init(cx: &mut Graph) -> Self {
-        let embeddings = cx.named_tensor("rwkv.embeddings.weight", (VOCAB_SIZE, HIDDEN));
-        let blocks = (0..NUM_LAYERS).map(|i| Block::init(i, cx)).collect();
+    pub fn init(cx: &mut Graph, cfg: &Config) -> Self {
+        let embeddings = cx.named_tensor("rwkv.embeddings.weight", (VOCAB_SIZE, cfg.hidden_size));
+        let blocks = (0..cfg.num_hidden_layers)
+            .map(|i| Block::init(i, cx, cfg))
+            .collect();
         let ln_out = LayerNorm::new(
-            HIDDEN,
+            cfg.hidden_size,
             Some("rwkv.ln_out.weight"),
             Some("rwkv.ln_out.bias"),
             false,
             EPSILON,
             cx,
         );
-        let head = Linear::new(VOCAB_SIZE, HIDDEN, "head.weight", None, cx);
+        let head = Linear::new(VOCAB_SIZE, cfg.hidden_size, "head.weight", None, cx);
         Self {
             embeddings,
             blocks,
@@ -57,12 +56,12 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
+    pub fn init(layer_id: usize, cx: &mut Graph, cfg: &Config) -> Self {
         let prefix = format!("rwkv.blocks.{layer_id}");
 
         let pre_ln = if layer_id == 0 {
             Some(LayerNorm::new(
-                HIDDEN,
+                cfg.hidden_size,
                 Some(&format!("{prefix}.pre_ln.weight")),
                 Some(&format!("{prefix}.pre_ln.bias")),
                 false,
@@ -73,7 +72,7 @@ impl Block {
             None
         };
         let ln1 = LayerNorm::new(
-            HIDDEN,
+            cfg.hidden_size,
             Some(&format!("{prefix}.ln1.weight")),
             Some(&format!("{prefix}.ln1.bias")),
             false,
@@ -81,15 +80,15 @@ impl Block {
             cx,
         );
         let ln2 = LayerNorm::new(
-            HIDDEN,
+            cfg.hidden_size,
             Some(&format!("{prefix}.ln2.weight")),
             Some(&format!("{prefix}.ln2.bias")),
             false,
             EPSILON,
             cx,
         );
-        let attention = SelfAttention::init(layer_id, cx);
-        let feed_forward = FeedForward::init(layer_id, cx);
+        let attention = SelfAttention::init(layer_id, cx, cfg);
+        let feed_forward = FeedForward::init(layer_id, cx, cfg);
         Self {
             pre_ln,
             ln1,
@@ -138,54 +137,87 @@ pub struct SelfAttention {
 }
 
 impl SelfAttention {
-    pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
+    pub fn init(layer_id: usize, cx: &mut Graph, cfg: &Config) -> Self {
         let prefix = format!("rwkv.blocks.{layer_id}.attention");
 
-        let x_r = cx.named_tensor(&format!("{prefix}.x_r"), (1, 1, HIDDEN));
-        let x_w = cx.named_tensor(&format!("{prefix}.x_w"), (1, 1, HIDDEN));
-        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
-        let x_v = cx.named_tensor(&format!("{prefix}.x_v"), (1, 1, HIDDEN));
-        let x_a = cx.named_tensor(&format!("{prefix}.x_a"), (1, 1, HIDDEN));
-        let x_g = cx.named_tensor(&format!("{prefix}.x_g"), (1, 1, HIDDEN));
-        let r_k = cx.named_tensor(&format!("{prefix}.r_k"), (HIDDEN / HEAD, HEAD));
-        let w0 = cx.named_tensor(&format!("{prefix}.w0"), (1, 1, HIDDEN));
-        let w1 = cx.named_tensor(&format!("{prefix}.w1"), (HIDDEN, HEAD));
-        let w2 = cx.named_tensor(&format!("{prefix}.w2"), (HEAD, HIDDEN));
-        let a0 = cx.named_tensor(&format!("{prefix}.a0"), (1, 1, HIDDEN));
-        let a1 = cx.named_tensor(&format!("{prefix}.a1"), (HIDDEN, HEAD));
-        let a2 = cx.named_tensor(&format!("{prefix}.a2"), (HEAD, HIDDEN));
-        let g1 = cx.named_tensor(&format!("{prefix}.g1"), (HIDDEN, HEAD * 2));
-        let g2 = cx.named_tensor(&format!("{prefix}.g2"), (HEAD * 2, HIDDEN));
+        let x_r = cx.named_tensor(&format!("{prefix}.x_r"), (1, 1, cfg.hidden_size));
+        let x_w = cx.named_tensor(&format!("{prefix}.x_w"), (1, 1, cfg.hidden_size));
+        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, cfg.hidden_size));
+        let x_v = cx.named_tensor(&format!("{prefix}.x_v"), (1, 1, cfg.hidden_size));
+        let x_a = cx.named_tensor(&format!("{prefix}.x_a"), (1, 1, cfg.hidden_size));
+        let x_g = cx.named_tensor(&format!("{prefix}.x_g"), (1, 1, cfg.hidden_size));
+        let r_k = cx.named_tensor(
+            &format!("{prefix}.r_k"),
+            (cfg.hidden_size / cfg.head_size, cfg.head_size),
+        );
+        let w0 = cx.named_tensor(&format!("{prefix}.w0"), (1, 1, cfg.hidden_size));
+        let w1 = cx.named_tensor(&format!("{prefix}.w1"), (cfg.hidden_size, cfg.head_size));
+        let w2 = cx.named_tensor(&format!("{prefix}.w2"), (cfg.head_size, cfg.hidden_size));
+        let a0 = cx.named_tensor(&format!("{prefix}.a0"), (1, 1, cfg.hidden_size));
+        let a1 = cx.named_tensor(&format!("{prefix}.a1"), (cfg.hidden_size, cfg.head_size));
+        let a2 = cx.named_tensor(&format!("{prefix}.a2"), (cfg.head_size, cfg.hidden_size));
+        let g1 = cx.named_tensor(
+            &format!("{prefix}.g1"),
+            (cfg.hidden_size, cfg.head_size * 2),
+        );
+        let g2 = cx.named_tensor(
+            &format!("{prefix}.g2"),
+            (cfg.head_size * 2, cfg.hidden_size),
+        );
         let v0 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("{prefix}.v0"), (1, 1, HIDDEN)))
+            Some(cx.named_tensor(&format!("{prefix}.v0"), (1, 1, cfg.hidden_size)))
         };
         let v1 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("{prefix}.v1"), (HIDDEN, HEAD / 2)))
+            Some(cx.named_tensor(
+                &format!("{prefix}.v1"),
+                (cfg.hidden_size, cfg.head_size / 2),
+            ))
         };
         let v2 = if layer_id == 0 {
             None
         } else {
-            Some(cx.named_tensor(&format!("{prefix}.v2"), (HEAD / 2, HIDDEN)))
+            Some(cx.named_tensor(
+                &format!("{prefix}.v2"),
+                (cfg.head_size / 2, cfg.hidden_size),
+            ))
         };
-        let k_k = cx.named_tensor(&format!("{prefix}.k_k"), (1, 1, HIDDEN));
-        let k_a = cx.named_tensor(&format!("{prefix}.k_a"), (1, 1, HIDDEN));
+        let k_k = cx.named_tensor(&format!("{prefix}.k_k"), (1, 1, cfg.hidden_size));
+        let k_a = cx.named_tensor(&format!("{prefix}.k_a"), (1, 1, cfg.hidden_size));
         let receptance = Linear::new(
-            HIDDEN,
-            HIDDEN,
+            cfg.hidden_size,
+            cfg.hidden_size,
             &format!("{prefix}.receptance.weight"),
             None,
             cx,
         );
-        let key = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.key.weight"), None, cx);
-        let value = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.value.weight"), None, cx);
-        let output = Linear::new(HIDDEN, HIDDEN, &format!("{prefix}.output.weight"), None, cx);
+        let key = Linear::new(
+            cfg.hidden_size,
+            cfg.hidden_size,
+            &format!("{prefix}.key.weight"),
+            None,
+            cx,
+        );
+        let value = Linear::new(
+            cfg.hidden_size,
+            cfg.hidden_size,
+            &format!("{prefix}.value.weight"),
+            None,
+            cx,
+        );
+        let output = Linear::new(
+            cfg.hidden_size,
+            cfg.hidden_size,
+            &format!("{prefix}.output.weight"),
+            None,
+            cx,
+        );
         let ln_x = GroupNorm::new(
-            HIDDEN,
-            HEAD,
+            cfg.hidden_size,
+            cfg.head_size,
             Some(&format!("{prefix}.ln_x.weight")),
             Some(&format!("{prefix}.ln_x.bias")),
             EPSILON as f64,
@@ -256,20 +288,20 @@ pub struct FeedForward {
 }
 
 impl FeedForward {
-    pub fn init(layer_id: usize, cx: &mut Graph) -> Self {
+    pub fn init(layer_id: usize, cx: &mut Graph, cfg: &Config) -> Self {
         let prefix = format!("rwkv.blocks.{layer_id}.feed_forward");
 
-        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, HIDDEN));
+        let x_k = cx.named_tensor(&format!("{prefix}.x_k"), (1, 1, cfg.hidden_size));
         let key = Linear::new(
-            HIDDEN * 4,
-            HIDDEN,
+            cfg.hidden_size * 4,
+            cfg.hidden_size,
             &format!("{prefix}.key.weight"),
             None,
             cx,
         );
         let value = Linear::new(
-            HIDDEN,
-            HIDDEN * 4,
+            cfg.hidden_size,
+            cfg.hidden_size * 4,
             &format!("{prefix}.value.weight"),
             None,
             cx,

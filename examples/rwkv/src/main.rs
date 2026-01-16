@@ -8,8 +8,8 @@ use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
 
 mod model;
 
-use crate::model::State;
 use crate::model::rwkv7::Model;
+use crate::model::{Config, State};
 
 fn main() {
     // let tokenizer = rwkv_tokenizer::WorldTokenizer::new(None).unwrap();
@@ -20,8 +20,13 @@ fn main() {
     let input = cx.named_tensor("input", (1, 1)).as_dtype(DType::Int);
 
     println!("Initializing model...");
-    let model = Model::init(&mut cx);
-    let mut state = State::init(&mut cx, 12, 768, 64);
+    let cfg = Config {
+        hidden_size: 768,
+        num_hidden_layers: 12,
+        head_size: 64,
+    };
+    let model = Model::init(&mut cx, &cfg);
+    let mut state = State::init(&mut cx, &cfg);
     let logits = model.forward(input, &mut state).output();
 
     // Build search space
