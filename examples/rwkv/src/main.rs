@@ -51,7 +51,7 @@ fn main() {
     rt = cx.search(rt, 5);
 
     println!("Loading weights...");
-    rt.load_safetensors(&cx, "setup/model_combined.safetensors");
+    rt.load_safetensors(&cx, "setup/model.safetensors");
 
     rt.set_data(input, vec![1]);
 

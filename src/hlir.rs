@@ -1491,9 +1491,11 @@ impl NativeRuntime {
                         }
                         safetensors::Dtype::F16 => {
                             let bytes = tensor.data();
-                            let f16s: &[f16] = bytemuck::cast_slice(bytes);
-                            self.buffers
-                                .insert(local_id, NativeData::F16(f16s.to_vec()));
+                            let f32s: Vec<f32> = bytes
+                                .chunks_exact(2)
+                                .map(|chunk| f16::from_le_bytes([chunk[0], chunk[1]]).to_f32())
+                                .collect();
+                            self.buffers.insert(local_id, NativeData::F32(f32s));
                         }
                         dtype => unimplemented!("{dtype} loading not supported yet"),
                     }
