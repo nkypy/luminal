@@ -100,7 +100,7 @@ impl Block {
     pub fn forward(&self, x: GraphTensor) -> GraphTensor {
         let x = self.pre_ln.as_ref().map(|ln| ln.forward(x)).unwrap_or(x);
         let x = self.ln1.forward(x);
-        // let x = self.attention.forward(x);
+        let x = self.attention.forward(x);
         let x = self.ln2.forward(x);
         let x = self.feed_forward.forward(x);
         x
@@ -225,20 +225,20 @@ impl SelfAttention {
         let x = self.x_v + x;
         let x = self.x_a + x;
         let x = self.x_g + x;
-        let x = self.r_k + x;
-        let x = self.w0 + x;
-        let x = self.w1 + x;
-        let x = self.w2 + x;
-        let x = self.a0 + x;
-        let x = self.a1 + x;
-        let x = self.a2 + x;
-        let x = self.g1 + x;
-        let x = self.g2 + x;
-        let x = self.v0.as_ref().map(|v| *v + x).unwrap_or(x);
-        let x = self.v1.as_ref().map(|v| *v + x).unwrap_or(x);
-        let x = self.v2.as_ref().map(|v| *v + x).unwrap_or(x);
-        let x = self.k_k + x;
-        let x = self.k_a + x;
+        // let x = self.r_k + x;
+        // let x = self.w0 + x;
+        // let x = self.w1 + x;
+        // let x = self.w2 + x;
+        // let x = self.a0 + x;
+        // let x = self.a1 + x;
+        // let x = self.a2 + x;
+        // let x = self.g1 + x;
+        // let x = self.g2 + x;
+        // let x = self.v0.as_ref().map(|v| *v + x).unwrap_or(x);
+        // let x = self.v1.as_ref().map(|v| *v + x).unwrap_or(x);
+        // let x = self.v2.as_ref().map(|v| *v + x).unwrap_or(x);
+        // let x = self.k_k + x;
+        // let x = self.k_a + x;
         // let x = self.receptance.forward(x);
         // let x = self.key.forward(x);
         // let x = self.value.forward(x);
@@ -277,7 +277,7 @@ impl FeedForward {
 
     pub fn forward(&self, x: GraphTensor) -> GraphTensor {
         let x = self.x_k + x;
-        // let x = self.key.forward(x);
+        let x = self.key.forward(x).relu().pow(2);
         // let x = self.value.forward(x);
         x
     }
