@@ -8,7 +8,8 @@ use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
 
 mod model;
 
-use model::rwkv7::Model;
+use crate::model::State;
+use crate::model::rwkv7::Model;
 
 fn main() {
     // let tokenizer = rwkv_tokenizer::WorldTokenizer::new(None).unwrap();
@@ -20,7 +21,8 @@ fn main() {
 
     println!("Initializing model...");
     let model = Model::init(&mut cx);
-    let logits = model.forward(input).output();
+    let mut state = State::init(&mut cx, 12, 768, 64);
+    let logits = model.forward(input, &mut state).output();
 
     // Build search space
     println!("Building E-Graph...");
@@ -58,5 +60,5 @@ fn main() {
     println!("Executing...");
     rt.execute(&cx.dyn_map);
     // Get output tensor
-    println!("Result: {:?}", rt.get_f32(logits));
+    println!("Result: {:?}", &rt.get_f32(logits)[..50]);
 }

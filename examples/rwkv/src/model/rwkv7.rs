@@ -1,6 +1,8 @@
 use luminal::prelude::*;
 use luminal_nn::{GroupNorm, LayerNorm, Linear};
 
+use super::State;
+
 const HIDDEN: usize = 768;
 const VOCAB_SIZE: usize = 65536;
 const HEAD: usize = 64;
@@ -36,10 +38,10 @@ impl Model {
         }
     }
 
-    pub fn forward(&self, x: GraphTensor) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, state: &mut State) -> GraphTensor {
         let mut x = self.embeddings.gather(x);
         for block in &self.blocks {
-            x = block.forward(x);
+            x = block.forward(x, state);
         }
         x = self.ln_out.forward(x);
         self.head.forward(x)
@@ -97,12 +99,12 @@ impl Block {
         }
     }
 
-    pub fn forward(&self, x: GraphTensor) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, state: &mut State) -> GraphTensor {
         let x = self.pre_ln.as_ref().map(|ln| ln.forward(x)).unwrap_or(x);
         let x = self.ln1.forward(x);
-        let x = self.attention.forward(x);
+        let x = self.attention.forward(x, state);
         let x = self.ln2.forward(x);
-        let x = self.feed_forward.forward(x);
+        let x = self.feed_forward.forward(x, state);
         x
     }
 }
@@ -218,7 +220,7 @@ impl SelfAttention {
         }
     }
 
-    pub fn forward(&self, x: GraphTensor) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, _state: &mut State) -> GraphTensor {
         let x = self.x_r + x;
         let x = self.x_w + x;
         let x = self.x_k + x;
@@ -275,7 +277,7 @@ impl FeedForward {
         Self { x_k, key, value }
     }
 
-    pub fn forward(&self, x: GraphTensor) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, _state: &mut State) -> GraphTensor {
         let x = self.x_k + x;
         let x = self.key.forward(x).relu().pow(2);
         // let x = self.value.forward(x);
