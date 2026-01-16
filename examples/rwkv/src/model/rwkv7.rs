@@ -42,8 +42,9 @@ impl Model {
         for block in &self.blocks {
             x = block.forward(x, state);
         }
-        x = self.ln_out.forward(x);
-        self.head.forward(x)
+        x = self.head.forward(self.ln_out.forward(x));
+        state.pos += 1;
+        x
     }
 }
 
@@ -134,6 +135,7 @@ pub struct SelfAttention {
     value: Linear,
     output: Linear,
     ln_x: GroupNorm,
+    layer_id: usize,
 }
 
 impl SelfAttention {
@@ -249,10 +251,14 @@ impl SelfAttention {
             value,
             output,
             ln_x,
+            layer_id,
         }
     }
 
-    pub fn forward(&self, x: GraphTensor, _state: &mut State) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, state: &mut State) -> GraphTensor {
+        let _shifted = state.per_layer[self.layer_id].extract_key_value;
+        state.per_layer[self.layer_id].extract_key_value = x;
+
         let x = self.x_r + x;
         let x = self.x_w + x;
         let x = self.x_k + x;
@@ -285,6 +291,7 @@ pub struct FeedForward {
     x_k: GraphTensor,
     key: Linear,
     value: Linear,
+    layer_id: usize,
 }
 
 impl FeedForward {
@@ -306,10 +313,20 @@ impl FeedForward {
             None,
             cx,
         );
-        Self { x_k, key, value }
+        Self {
+            x_k,
+            key,
+            value,
+            layer_id,
+        }
     }
 
-    pub fn forward(&self, x: GraphTensor, _state: &mut State) -> GraphTensor {
+    pub fn forward(&self, x: GraphTensor, state: &mut State) -> GraphTensor {
+        let _shifted = state.per_layer[self.layer_id].feed_forward;
+        state.per_layer[self.layer_id].feed_forward = x;
+
+        // let xx = shifted - x;
+        // let x = x + xx * self.x_k;
         let x = self.x_k + x;
         let x = self.key.forward(x).relu().pow(2);
         // let x = self.value.forward(x);
