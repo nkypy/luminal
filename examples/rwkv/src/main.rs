@@ -41,6 +41,9 @@ fn main() {
     let mut state = State::init(&mut cx, &cfg);
     let logits = model.forward(input, &mut state).output();
 
+    let att = model.blocks[0].attention.forward(input, &mut state);
+    let ffn = model.blocks[0].feed_forward.forward(input, &mut state);
+
     // Build search space
     println!("Building E-Graph...");
     #[cfg(feature = "cuda")]
@@ -63,5 +66,7 @@ fn main() {
     println!("Executing...");
     rt.execute(&cx.dyn_map);
     // Get output tensor
-    println!("Result: {:?}", &rt.get_f32(logits)[..50]);
+    println!("Result: {:?}\n==========", &rt.get_f32(logits)[..20]);
+    println!("att Result: {:?}\n==========", &rt.get_f32(att)[..20]);
+    println!("ffn Result: {:?}", &rt.get_f32(ffn)[..20]);
 }
