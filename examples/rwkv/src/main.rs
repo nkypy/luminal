@@ -4,7 +4,7 @@ use luminal::prelude::*;
 #[cfg(feature = "cuda")]
 use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
 #[cfg(all(feature = "metal", not(feature = "cuda")))]
-use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
+use luminal_metal::runtime::MetalRuntime;
 
 mod model;
 
@@ -25,11 +25,7 @@ fn main() {
         CudaRuntime::initialize(stream)
     };
     #[cfg(all(feature = "metal", not(feature = "cuda")))]
-    let mut rt = {
-        let ctx = CudaContext::new(0).unwrap();
-        let stream = ctx.default_stream();
-        CudaRuntime::initialize(stream)
-    };
+    let mut rt = MetalRuntime::initialize(());
     #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
     let mut rt = NativeRuntime::default();
 
@@ -50,7 +46,7 @@ fn main() {
     #[cfg(feature = "cuda")]
     cx.build_search_space::<CudaRuntime>();
     #[cfg(all(feature = "metal", not(feature = "cuda")))]
-    cx.build_search_space::<CudaRuntime>();
+    cx.build_search_space::<MetalRuntime>();
     #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
     cx.build_search_space::<NativeRuntime>();
 
