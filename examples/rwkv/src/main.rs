@@ -17,6 +17,22 @@ fn main() {
     // Create compute graph
     let mut cx = Graph::default();
 
+    // Runtime
+    #[cfg(feature = "cuda")]
+    let mut rt = {
+        let ctx = CudaContext::new(0).unwrap();
+        let stream = ctx.default_stream();
+        CudaRuntime::initialize(stream)
+    };
+    #[cfg(all(feature = "metal", not(feature = "cuda")))]
+    let mut rt = {
+        let ctx = CudaContext::new(0).unwrap();
+        let stream = ctx.default_stream();
+        CudaRuntime::initialize(stream)
+    };
+    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
+    let mut rt = NativeRuntime::default();
+
     let input = cx.named_tensor("input", (1, 1)).as_dtype(DType::Int);
 
     println!("Initializing model...");
@@ -38,41 +54,15 @@ fn main() {
     #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
     cx.build_search_space::<NativeRuntime>();
 
-    // Load model weights from safetensors file
-    #[cfg(feature = "cuda")]
-    let mut rt = {
-        let ctx = CudaContext::new(0).unwrap();
-        let stream = ctx.default_stream();
-        CudaRuntime::initialize(stream)
-    };
-    #[cfg(all(feature = "metal", not(feature = "cuda")))]
-    let mut rt = {
-        let ctx = CudaContext::new(0).unwrap();
-        let stream = ctx.default_stream();
-        CudaRuntime::initialize(stream)
-    };
-    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
-    let mut rt = NativeRuntime::default();
-
     println!("Compiling...");
     rt = cx.search(rt, 5);
 
     println!("Loading weights...");
     rt.load_safetensors(&cx, "setup/model.safetensors");
+    // println!("Loading state...");
+    // rt.load_state(&cx, cfg.hidden_size, None);
 
     rt.set_data(input, vec![1]);
-
-    // for i in 0..state.per_layer.len() {
-    //     rt.set_data(
-    //         state.per_layer[i].extract_key_value,
-    //         vec![0.0; cfg.hidden_size],
-    //     );
-    //     rt.set_data(
-    //         state.per_layer[i].linear_attention,
-    //         vec![0.0; cfg.hidden_size * cfg.head_size * cfg.head_size],
-    //     );
-    //     rt.set_data(state.per_layer[i].feed_forward, vec![0.0; cfg.hidden_size]);
-    // }
 
     println!("Executing...");
     rt.execute(&cx.dyn_map);

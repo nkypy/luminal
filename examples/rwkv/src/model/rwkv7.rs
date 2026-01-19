@@ -322,11 +322,14 @@ impl FeedForward {
     }
 
     pub fn forward(&self, x: GraphTensor, state: &mut State) -> GraphTensor {
-        let _shifted = state.per_layer[self.layer_id].feed_forward;
+        let shifted = state.per_layer[self.layer_id].feed_forward;
+        // dbg!(shifted.dims());
         state.per_layer[self.layer_id].feed_forward = x;
 
         // let xx = shifted - x;
+        // // dbg!(xx.dims());
         // let x = x + xx * self.x_k;
+        // // dbg!(x.dims());
         let x = self.x_k + x;
         let x = self.key.forward(x).relu().pow(2);
         // let x = self.value.forward(x);
