@@ -1,9 +1,9 @@
 [package]
 name = "luminal_cpu"
-version = "0.2.0"
-edition = "2024"
 description = "CPU backend for luminal with SIMD optimizations"
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 luminal = { path = "../.." }

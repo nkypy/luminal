@@ -1,9 +1,9 @@
 [package]
 name = "luminal_metal"
-version = "0.2.0"
-edition = "2021"
 description = "Metal backend for luminal"
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 luminal = { path = "../.." }

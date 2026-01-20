@@ -1,9 +1,9 @@
 [package]
 name = "luminal_nn"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Neural network backend for luminal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 itertools = "0.12.1"

@@ -5,8 +5,8 @@ use luminal::{
     hlir::{Input, Output},
     op::Runtime,
     prelude::{
-        petgraph::{algo::toposort, prelude::StableGraph, visit::EdgeRef, Direction},
         FxHashMap, NodeIndex, ToId,
+        petgraph::{Direction, algo::toposort, prelude::StableGraph, visit::EdgeRef},
     },
 };
 use metal::{Buffer, CommandQueue, ComputePipelineState, Device, MTLResourceOptions};

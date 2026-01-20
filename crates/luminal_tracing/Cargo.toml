@@ -1,7 +1,9 @@
 [package]
 name = "luminal_tracing"
-version = "0.1.0"
+description = "Tracing backend for luminal"
+version.workspace = true
 edition.workspace = true
+license.workspace = true
 
 [dependencies]
 tracing-appender = "0.2.4"

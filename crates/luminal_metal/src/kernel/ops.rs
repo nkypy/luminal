@@ -192,14 +192,16 @@ impl EgglogOp for MetalAdd {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Add ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (= ?dt (dtype ?a)))
             ((let ?me (MetalAdd ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -311,14 +313,16 @@ impl EgglogOp for MetalMul {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Mul ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (= ?dt (dtype ?a)))
             ((let ?me (MetalMul ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -429,14 +433,16 @@ impl EgglogOp for MetalMod {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Mod ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (= ?dt (dtype ?a)))
             ((let ?me (MetalMod ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -547,14 +553,16 @@ impl EgglogOp for MetalLessThan {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (LessThan ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (= ?dt (dtype ?a)))
             ((let ?me (MetalLessThan ?shape ?a ?a_stride ?b ?b_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -669,14 +677,16 @@ impl EgglogOp for MetalSumReduce {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Sum ?out_shape ?iters ?inp ?in_stride ?iter_stride ?out_stride))
              (= ?dt (dtype ?inp)))
             ((let ?me (MetalSum ?out_shape ?iters ?inp ?in_stride ?iter_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -822,14 +832,16 @@ impl EgglogOp for MetalMaxReduce {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Max ?out_shape ?iters ?inp ?in_stride ?iter_stride ?out_stride))
              (= ?dt (dtype ?inp)))
             ((let ?me (MetalMax ?out_shape ?iters ?inp ?in_stride ?iter_stride ?out_stride))
              (union ?e ?me)
              (set (dtype ?me) ?dt))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -973,13 +985,15 @@ impl EgglogOp for MetalConstant {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Constant ?f)))
             ((let ?me (MetalConstant ?f))
              (union ?e ?me)
              (set (dtype ?me) (F32)))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
@@ -1061,13 +1075,15 @@ impl EgglogOp for MetalIota {
     }
 
     fn rewrites(&self) -> Vec<String> {
-        vec![r#"(rule
+        vec![
+            r#"(rule
             ((= ?e (Iota ?expr ?range)))
             ((let ?me (MetalIota ?expr ?range))
              (union ?e ?me)
              (set (dtype ?me) (Int)))
         )"#
-        .to_string()]
+            .to_string(),
+        ]
     }
 
     fn cleanup(&self) -> bool {
