@@ -283,9 +283,7 @@ impl SelfAttention {
         // let x = self.key.forward(x);
         // let x = self.value.forward(x);
         // let x = self.output.forward(x);
-        // TODO: for debug
-        x.output()
-        // x
+        x
     }
 }
 
@@ -335,8 +333,6 @@ impl FeedForward {
         let x = self.x_k + x;
         let x = self.key.forward(x).relu().pow(2);
         // let x = self.value.forward(x);
-        // TODO: for debug
-        x.output()
-        // x
+        x
     }
 }

@@ -50,8 +50,14 @@ fn main() {
     let mut state = State::init(&mut cx, &cfg);
     let logits = model.forward(input, &mut state).output();
 
-    let att = model.blocks[0].attention.forward(input, &mut state);
-    let ffn = model.blocks[0].feed_forward.forward(input, &mut state);
+    let att = model.blocks[0]
+        .attention
+        .forward(input, &mut state)
+        .output();
+    let ffn = model.blocks[0]
+        .feed_forward
+        .forward(input, &mut state)
+        .output();
 
     // Build search space
     println!("Building E-Graph...");
