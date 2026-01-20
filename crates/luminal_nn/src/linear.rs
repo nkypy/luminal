@@ -46,11 +46,12 @@ impl Linear {
         } else {
             self.weight
         });
-        if let Some(_bias) = self.bias {
-            todo!()
-            // output += bias.expand(output.shape);
+        // let output = match
+        if let Some(bias) = self.bias {
+            output + bias
+        } else {
+            output
         }
-        output
     }
 }
 

@@ -1,0 +1,19 @@
+[package]
+name = "luminal_cpu"
+version = "0.2.0"
+edition = "2024"
+description = "CPU backend for luminal with SIMD optimizations"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+luminal = { path = "../.." }
+as-any = "0.3.2"
+itertools = "0.12.1"
+tracing = "0.1.43"
+safetensors = "0.7.0"
+memmap2 = "0.9.9"
+bytemuck = "1.24.0"
+half = "2.7.1"
+
+[dev-dependencies]
+proptest = "1.9.0"

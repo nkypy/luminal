@@ -12,8 +12,11 @@ rwkv-tokenizer = "0.9.1"
 luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
 # Metal
 luminal_metal = { path = "../../crates/luminal_metal", optional = true }
+# Cpu
+luminal_cpu = { path = "../../crates/luminal_cpu", optional = true }
 
 [features]
 default = []
 cuda = ["dep:luminal_cuda"]
 metal = ["dep:luminal_metal"]
+cpu = ["dep:luminal_cpu"]

@@ -3,8 +3,15 @@ use luminal::prelude::*;
 // cfg not, any, all
 #[cfg(feature = "cuda")]
 use luminal_cuda::{cudarc::driver::CudaContext, runtime::CudaRuntime};
+
 #[cfg(all(feature = "metal", not(feature = "cuda")))]
 use luminal_metal::runtime::MetalRuntime;
+
+#[cfg(all(feature = "cpu", not(feature = "metal"), not(feature = "cuda")))]
+use luminal_cpu::runtime::CpuRuntime;
+
+#[cfg(all(not(feature = "cpu"), not(feature = "metal"), not(feature = "cuda")))]
+use luminal::hlir::NativeRuntime;
 
 mod model;
 
@@ -26,8 +33,10 @@ fn main() {
     };
     #[cfg(all(feature = "metal", not(feature = "cuda")))]
     let mut rt = MetalRuntime::initialize(());
-    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
-    let mut rt = NativeRuntime::default();
+    #[cfg(all(feature = "cpu", not(feature = "metal"), not(feature = "cuda")))]
+    let mut rt = CpuRuntime::initialize(());
+    #[cfg(all(not(feature = "cpu"), not(feature = "metal"), not(feature = "cuda")))]
+    let mut rt = NativeRuntime::initialize(());
 
     let input = cx.named_tensor("input", (1, 1)).as_dtype(DType::Int);
 
@@ -50,7 +59,9 @@ fn main() {
     cx.build_search_space::<CudaRuntime>();
     #[cfg(all(feature = "metal", not(feature = "cuda")))]
     cx.build_search_space::<MetalRuntime>();
-    #[cfg(all(not(feature = "metal"), not(feature = "cuda")))]
+    #[cfg(all(feature = "cpu", not(feature = "metal"), not(feature = "cuda")))]
+    cx.build_search_space::<CpuRuntime>();
+    #[cfg(all(not(feature = "cpu"), not(feature = "metal"), not(feature = "cuda")))]
     cx.build_search_space::<NativeRuntime>();
 
     println!("Compiling...");
@@ -61,6 +72,9 @@ fn main() {
     // println!("Loading state...");
     // rt.load_state(&cx, cfg.hidden_size, None);
 
+    #[cfg(any(feature = "metal", feature = "cpu"))]
+    rt.set_data(input, vec![1.0].as_ref());
+    #[cfg(not(any(feature = "metal", feature = "cpu")))]
     rt.set_data(input, vec![1]);
 
     println!("Executing...");

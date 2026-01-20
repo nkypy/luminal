@@ -1491,41 +1491,42 @@ impl NativeRuntime {
         let mmap = unsafe { MmapOptions::new().map(&f).unwrap() };
         let st = SafeTensors::deserialize(&mmap).unwrap();
         for node in cx.graph.node_indices() {
-            if let Some(Input { label, .. }) = (*cx.graph[node]).as_any().downcast_ref::<Input>() {
-                if let Ok(tensor) = st.tensor(label) {
-                    let local_id = self
-                        .graph
-                        .node_indices()
-                        .find(|n| {
-                            if let Some(Input { node: ref_node, .. }) =
-                                (**self.graph[*n]).as_any().downcast_ref::<Input>()
-                            {
-                                *ref_node == node.index()
-                            } else {
-                                false
-                            }
-                        })
-                        .unwrap();
-                    match tensor.dtype() {
-                        safetensors::Dtype::F32 => {
-                            let bytes = tensor.data();
-                            let f32s: &[f32] = bytemuck::cast_slice(bytes);
-                            self.buffers
-                                .insert(local_id, NativeData::F32(f32s.to_vec()));
+            if let Some(Input { label, .. }) = (*cx.graph[node]).as_any().downcast_ref::<Input>()
+                && let Ok(tensor) = st.tensor(label)
+            {
+                let local_id = self
+                    .graph
+                    .node_indices()
+                    .find(|n| {
+                        if let Some(Input { node: ref_node, .. }) =
+                            (**self.graph[*n]).as_any().downcast_ref::<Input>()
+                        {
+                            *ref_node == node.index()
+                        } else {
+                            false
                         }
-                        safetensors::Dtype::F16 => {
-                            let bytes = tensor.data();
-                            let f32s: Vec<f32> = bytes
-                                .chunks_exact(2)
-                                .map(|chunk| f16::from_le_bytes([chunk[0], chunk[1]]).to_f32())
-                                .collect();
-                            self.buffers.insert(local_id, NativeData::F32(f32s));
-                        }
-                        dtype => unimplemented!("{dtype} loading not supported yet"),
+                    })
+                    .unwrap();
+                // let local_id = node;
+                match tensor.dtype() {
+                    safetensors::Dtype::F32 => {
+                        let bytes = tensor.data();
+                        let f32s: &[f32] = bytemuck::cast_slice(bytes);
+                        self.buffers
+                            .insert(local_id, NativeData::F32(f32s.to_vec()));
                     }
-                } else {
-                    dbg!(node);
+                    safetensors::Dtype::F16 => {
+                        let bytes = tensor.data();
+                        let f32s: Vec<f32> = bytes
+                            .chunks_exact(2)
+                            .map(|chunk| f16::from_le_bytes([chunk[0], chunk[1]]).to_f32())
+                            .collect();
+                        self.buffers.insert(local_id, NativeData::F32(f32s));
+                    }
+                    dtype => unimplemented!("{dtype} loading not supported yet"),
                 }
+            } else {
+                dbg!(node);
             }
         }
     }
