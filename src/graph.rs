@@ -509,6 +509,21 @@ fn run_egglog(
     egraph
         .node_to_class
         .retain(|n, _| egraph.enodes.contains_key(n));
+
+    // Debug logging for root check
+    if !egraph.roots.iter().all(|c| egraph.eclasses.contains_key(c)) {
+        println!("Roots: {:?}", egraph.roots);
+        println!(
+            "Eclasses present: {:?}",
+            egraph.eclasses.keys().collect::<Vec<_>>()
+        );
+        for root in &egraph.roots {
+            if !egraph.eclasses.contains_key(root) {
+                println!("Missing root: {:?}", root);
+            }
+        }
+    }
+
     assert!(
         egraph.roots.iter().all(|c| egraph.eclasses.contains_key(c)),
         "No valid graphs present in the e-graph!"
