@@ -21,6 +21,17 @@ use crate::model::{Config, State};
 fn main() {
     // let tokenizer = rwkv_tokenizer::WorldTokenizer::new(None).unwrap();
 
+    #[cfg(target_arch = "aarch64")]
+    {
+        if is_aarch64_feature_detected!("neon") {
+            println!("NEON detected");
+        }
+    }
+    #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
+    {
+        println!("AVX2 detected");
+    }
+
     // Create compute graph
     let mut cx = Graph::default();
 

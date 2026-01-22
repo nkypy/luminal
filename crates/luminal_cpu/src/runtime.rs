@@ -14,6 +14,11 @@ use memmap2::MmapOptions;
 use safetensors::SafeTensors;
 use std::{fs::File, time::Duration};
 
+#[cfg(target_arch = "aarch64")]
+use core::arch::aarch64::*;
+#[cfg(target_arch = "x86_64")]
+use core::arch::x86_64::*;
+
 pub struct CpuRuntime {
     /// Buffers for HLIR input tensors (set by user)
     pub hlir_buffers: FxHashMap<NodeIndex, Vec<f32>>,
@@ -30,6 +35,18 @@ impl CpuRuntime {
     /// by their label and store them in the HLIR buffers.
     #[tracing::instrument(skip_all)]
     pub fn load_safetensors(&mut self, cx: &Graph, file_path: &str) {
+        #[cfg(target_arch = "aarch64")]
+        {
+            if is_aarch64_feature_detected!("neon") {
+                println!("NEON detected");
+            }
+        }
+        #[cfg(target_arch = "x86_64")]
+        {
+            if is_x86_feature_detected!("avx2") {
+                println!("AVX2 detected");
+            }
+        }
         let f = File::open(file_path).expect("Failed to open safetensors file");
         let mmap = unsafe { MmapOptions::new().map(&f).expect("Failed to mmap file") };
         let st = SafeTensors::deserialize(&mmap).expect("Failed to deserialize safetensors");

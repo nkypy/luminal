@@ -1,4 +1,11 @@
 [target.aarch64-unknown-linux-gnu]
-rustflags = [
-    "-Ctarget-feature=+fp16,+fhm"
-]
+rustflags = ["-Ctarget-feature=+fp16,+fhm"]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-Ctarget-feature=+avx2"]
+
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "target-feature=+neon"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "target-feature=+avx2"]
