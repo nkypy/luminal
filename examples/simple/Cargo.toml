@@ -5,5 +5,12 @@ edition = "2021"
 
 [dependencies]
 luminal = { path = "../.." }
-luminal_cpu = { path = "../../crates/luminal_cpu" }
-luminal_metal = { path = "../../crates/luminal_metal" }
+luminal_cpu = { path = "../../crates/luminal_cpu", optional = true }
+luminal_metal = { path = "../../crates/luminal_metal", optional = true }
+luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
+
+[features]
+default = []
+cuda = ["dep:luminal_cuda"]
+metal = ["dep:luminal_metal"]
+cpu = ["dep:luminal_cpu"]

@@ -1453,6 +1453,26 @@ impl From<Vec<i32>> for NativeData {
         NativeData::Int(value)
     }
 }
+impl From<&[f32]> for NativeData {
+    fn from(value: &[f32]) -> Self {
+        NativeData::F32(value.to_vec())
+    }
+}
+impl From<&[f16]> for NativeData {
+    fn from(value: &[f16]) -> Self {
+        NativeData::F16(value.to_vec())
+    }
+}
+impl From<&[bf16]> for NativeData {
+    fn from(value: &[bf16]) -> Self {
+        NativeData::Bf16(value.to_vec())
+    }
+}
+impl From<&[i32]> for NativeData {
+    fn from(value: &[i32]) -> Self {
+        NativeData::Int(value.to_vec())
+    }
+}
 
 #[derive(Default)]
 pub struct NativeRuntime {
