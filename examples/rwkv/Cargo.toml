@@ -7,6 +7,7 @@ edition = "2024"
 luminal = { path = "../.." }
 luminal_nn = { path = "../../crates/luminal_nn" }
 luminal_tracing = { path = "../../crates/luminal_tracing" }
+clap = { version = "4.5", features = ["derive"] }
 rwkv-tokenizer = "0.9.1"
 # CUDA
 luminal_cuda = { path = "../../crates/luminal_cuda", optional = true }
@@ -16,7 +17,7 @@ luminal_metal = { path = "../../crates/luminal_metal", optional = true }
 luminal_cpu = { path = "../../crates/luminal_cpu", optional = true }
 
 [features]
-default = []
+default = ["cpu"]
 cuda = ["dep:luminal_cuda"]
 metal = ["dep:luminal_metal"]
 cpu = ["dep:luminal_cpu"]

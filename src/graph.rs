@@ -154,6 +154,8 @@ impl Graph {
         let mut ops = Rt::Ops::into_vec();
         ops.extend(<crate::hlir::HLIROps as IntoEgglogOp>::into_vec());
         let (program, root) = hlir_to_egglog(self);
+        println!("program {:?}", program);
+        println!("root {:?}", root);
         self.egraph = Some(
             run_egglog(
                 &program,
@@ -401,8 +403,10 @@ fn run_egglog(
     };
     let (program, root) = termdag_to_egglog(termdag, termdag.lookup(term));
     let code = egglog_utils::full_egglog(&program, ops, cleanup);
+    println!("code {:?}", code);
     let mut egraph = egglog::EGraph::default();
     let commands = egraph.parser.get_program_from_string(None, &code)?;
+    println!("commands {:?}", commands);
     println!("{}", "Egglog running...".green());
     let _outputs = egraph.run_program(commands)?;
     println!("{}", "---- Egglog Rule Matches ----".green());
@@ -447,6 +451,7 @@ fn run_egglog(
             .or_insert(vec![])
             .push(node_id.clone())
     }
+    println!("classes {:?}", classes);
     let mut egraph = SerializedEGraph {
         roots: s.egraph.root_eclasses,
         node_to_class: s

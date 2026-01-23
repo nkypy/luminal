@@ -1,0 +1,17 @@
+[package]
+name = "luminal_cubecl"
+description = "CubeCL backend for luminal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+luminal = { path = "../.." }
+cubecl = { version = "0.9", default-features = false, features = ["wgpu"] }
+serde = { version = "1.0", features = ["derive"] }
+bytemuck = "1.24.0"
+half = "2.7.1"
+tracing = "0.1"
+
+[dev-dependencies]
+proptest = "1.9.0"
