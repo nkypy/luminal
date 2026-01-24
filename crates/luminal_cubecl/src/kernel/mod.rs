@@ -6,11 +6,13 @@ use luminal::op::EgglogOp;
 use luminal::prelude::{Expression, FxHashMap};
 
 pub trait CubeKernelOp: EgglogOp {
+    type R: CubeCLRuntime;
+
     fn output_size(&self) -> Expression;
 
-    fn execute<R: CubeCLRuntime>(
+    fn execute(
         &self,
-        client: &ComputeClient<R>,
+        client: &ComputeClient<Self::R>,
         inputs: &[Handle],
         output: Handle,
         dyn_map: &FxHashMap<char, usize>,

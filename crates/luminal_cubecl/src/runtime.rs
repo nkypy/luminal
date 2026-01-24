@@ -1,12 +1,13 @@
 use crate::kernel::CubeKernelOp;
 use cubecl::{Runtime as CubeCLRuntime, prelude::*, server::Handle};
+use itertools::Itertools;
 use luminal::{
     graph::LLIRGraph,
     hlir::{Input, Output},
     op::Runtime,
     prelude::{
+        FxHashMap, NodeIndex, ToId,
         petgraph::{Direction, algo::toposort, prelude::StableGraph, visit::EdgeRef},
-        *,
     },
 };
 use std::time::Duration;
@@ -131,7 +132,7 @@ impl<R: CubeCLRuntime> Runtime for CubeRuntime<R> {
                 continue;
             }
 
-            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp>() {
+            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp<R = R>>() {
                 let input_nodes: Vec<NodeIndex> = self
                     .llir_graph
                     .edges_directed(node, Direction::Incoming)
@@ -162,7 +163,7 @@ impl<R: CubeCLRuntime> Runtime for CubeRuntime<R> {
                     .expect("Output buffer not allocated!")
                     .clone();
 
-                kernel_op.execute::<R>(&self.client, &input_buffers, output_buffer, dyn_map);
+                kernel_op.execute(&self.client, &input_buffers, output_buffer, dyn_map);
             }
         }
     }
@@ -175,7 +176,7 @@ impl<R: CubeCLRuntime> CubeRuntime<R> {
                 continue;
             }
 
-            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp>() {
+            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp<R = R>>() {
                 let size = kernel_op.output_size().exec(dyn_map).unwrap();
                 let buffer = self.client.empty(size * core::mem::size_of::<f32>());
                 self.buffers.insert(node, buffer);

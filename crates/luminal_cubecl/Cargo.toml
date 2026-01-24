@@ -10,6 +10,7 @@ luminal = { path = "../.." }
 cubecl = { version = "0.9", default-features = false, features = ["wgpu"] }
 serde = { version = "1.0", features = ["derive"] }
 bytemuck = "1.24.0"
+itertools = "0.12.1"
 half = "2.7.1"
 tracing = "0.1"
 

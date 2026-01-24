@@ -408,6 +408,8 @@ impl EgglogOp for CubeSumReduce {
 }
 
 impl CubeKernelOp for CubeSumReduce {
+    type R = CubeCLRuntime;
+
     fn output_size(&self) -> Expression {
         self.out_shape
             .iter()
@@ -415,9 +417,9 @@ impl CubeKernelOp for CubeSumReduce {
             .product::<Expression>()
             .max(Expression::from(1))
     }
-    fn execute<R: CubeCLRuntime>(
+    fn execute(
         &self,
-        client: &ComputeClient<R>,
+        client: &ComputeClient<Self::R>,
         inputs: &[Handle],
         output: Handle,
         dyn_map: &FxHashMap<char, usize>,

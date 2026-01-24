@@ -319,18 +319,19 @@ impl Expression {
             if terms.len() == 5
                 && let (Term::Num(_), Term::Var(_), Term::Num(_), Term::Mul, Term::Add) =
                     (terms[0], terms[1], terms[2], terms[3], terms[4])
-                {
-                    return self;
-                }
+            {
+                return self;
+            }
         }
 
         egglog_simplify(self)
     }
     pub fn as_num(&self) -> Option<i32> {
         if let Term::Num(n) = self.terms.read()[0]
-            && self.terms.read().len() == 1 {
-                return Some(n);
-            }
+            && self.terms.read().len() == 1
+        {
+            return Some(n);
+        }
         None
     }
     pub fn len(&self) -> usize {
@@ -403,10 +404,10 @@ impl Expression {
         }
         if let Term::Num(n) = rhs.terms.read()[0]
             && self.terms.read()[self.terms.read().len() - 1] == Term::Mod
-                && self.terms.read()[0] == Term::Num(n)
-            {
-                return true.into();
-            }
+            && self.terms.read()[0] == Term::Num(n)
+        {
+            return true.into();
+        }
         if let (Some(a), Some(b)) = (self.as_num(), rhs.as_num()) {
             return (a < b).into();
         }
@@ -731,11 +732,12 @@ impl<E: Into<Expression>> Add<E> for Expression {
             let self_terms = self.terms.read();
             if self_terms.last() == Some(&Term::Add)
                 && let Some(Term::Num(n)) = self_terms.first()
-                    && let Some(folded) = n.checked_add(z) {
-                        let mut new_terms = self_terms.clone();
-                        new_terms[0] = Term::Num(folded);
-                        return Expression::new(new_terms);
-                    }
+                && let Some(folded) = n.checked_add(z)
+            {
+                let mut new_terms = self_terms.clone();
+                new_terms[0] = Term::Num(folded);
+                return Expression::new(new_terms);
+            }
         }
 
         let mut terms = rhs.terms.read().clone();
@@ -779,9 +781,10 @@ impl<E: Into<Expression>> Mul<E> for Expression {
             return 0.into();
         }
         if let (Some(a), Some(b)) = (self.as_num(), rhs.as_num())
-            && let Some(c) = a.checked_mul(b) {
-                return c.into();
-            }
+            && let Some(c) = a.checked_mul(b)
+        {
+            return c.into();
+        }
         let mut terms = rhs.terms.read().clone();
         terms.extend(self.terms.read().iter().copied());
         terms.push(Term::Mul);
@@ -804,9 +807,10 @@ impl<E: Into<Expression>> Div<E> for Expression {
         }
         if let (Some(a), Some(b)) = (self.as_num(), rhs.as_num())
             && a % b == 0
-                && let Some(c) = a.checked_div(b) {
-                    return c.into();
-                }
+            && let Some(c) = a.checked_div(b)
+        {
+            return c.into();
+        }
         let mut terms = rhs.terms.read().clone();
         terms.extend(self.terms.read().iter().copied());
         terms.push(Term::Div);

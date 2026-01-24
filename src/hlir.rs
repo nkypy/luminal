@@ -1485,23 +1485,24 @@ impl NativeRuntime {
     pub fn load_state(&mut self, cx: &Graph, hidden_size: usize, _file_path: Option<&str>) {
         for node in cx.graph.node_indices() {
             if let Some(Input { label, .. }) = (*cx.graph[node]).as_any().downcast_ref::<Input>()
-                && label.starts_with("state.") {
-                    let local_id = self
-                        .graph
-                        .node_indices()
-                        .find(|n| {
-                            if let Some(Input { node: ref_node, .. }) =
-                                (**self.graph[*n]).as_any().downcast_ref::<Input>()
-                            {
-                                *ref_node == node.index()
-                            } else {
-                                false
-                            }
-                        })
-                        .unwrap();
-                    self.buffers
-                        .insert(local_id, NativeData::F32(vec![0.0; hidden_size * 4]));
-                }
+                && label.starts_with("state.")
+            {
+                let local_id = self
+                    .graph
+                    .node_indices()
+                    .find(|n| {
+                        if let Some(Input { node: ref_node, .. }) =
+                            (**self.graph[*n]).as_any().downcast_ref::<Input>()
+                        {
+                            *ref_node == node.index()
+                        } else {
+                            false
+                        }
+                    })
+                    .unwrap();
+                self.buffers
+                    .insert(local_id, NativeData::F32(vec![0.0; hidden_size * 4]));
+            }
         }
     }
     #[tracing::instrument(skip_all)]
