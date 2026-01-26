@@ -2,7 +2,7 @@ use luminal::{
     graph::Graph,
     op::{CustomOp, LLIROp},
     prelude::{FxHashMap, GraphTensor},
-    shape::{flatten_mul_strides, Expression, ToShape},
+    shape::{Expression, ToShape, flatten_mul_strides},
 };
 use luminal_cuda::{
     block::{BlockOp, CStruct},
@@ -12,11 +12,11 @@ use luminal_nn::LayerNorm;
 use std::{fmt::Debug, sync::Arc};
 
 // Qwen3-4B hyperparams
-pub const LAYERS: usize = 36;
-pub const HIDDEN: usize = 2560;
-pub const INTERMEDIATE: usize = 9728;
+pub const LAYERS: usize = 28;
+pub const HIDDEN: usize = 1024;
+pub const INTERMEDIATE: usize = 3072;
 pub const HEAD_DIM: usize = 128;
-pub const N_HEADS: usize = 32; // Number of attention heads for Q
+pub const N_HEADS: usize = 16; // Number of attention heads for Q
 pub const N_KV_HEADS: usize = 8; // Number of KV heads
 pub const KV_GROUPS: usize = N_HEADS / N_KV_HEADS; // = 4
 pub const Q_DIM: usize = N_HEADS * HEAD_DIM; // = 4096

@@ -6,7 +6,8 @@
 #     "torch",
 #     "packaging",
 #     "numpy",
-#     "huggingface-hub"
+#     "huggingface-hub",
+#     "httpx[socks]",
 # ]
 # ///
 
@@ -108,7 +109,7 @@ def combine_and_convert_safetensors_to_fp32(model_dir: Path):
 
 if __name__ == "__main__":
     script_dir = Path(__file__).parent
-    repo_id = "Qwen/Qwen3-4B"
+    repo_id = "Qwen/Qwen3-0.6B"
 
     download_model_files(repo_id, script_dir)
 
