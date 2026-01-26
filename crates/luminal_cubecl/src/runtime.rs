@@ -26,7 +26,7 @@ pub struct CubeRuntime {
 
 impl CubeRuntime {
     pub fn new() -> Self {
-        let client = CubeCLRuntime::client(&Default::default());
+        let client = cubecl::Runtime::client(&Default::default());
         Self {
             client,
             hlir_buffers: FxHashMap::default(),
@@ -134,7 +134,7 @@ impl Runtime for CubeRuntime {
                 continue;
             }
 
-            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp<R = R>>() {
+            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp>() {
                 let input_nodes: Vec<NodeIndex> = self
                     .llir_graph
                     .edges_directed(node, Direction::Incoming)
@@ -178,7 +178,7 @@ impl CubeRuntime {
                 continue;
             }
 
-            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp<R = R>>() {
+            if let Some(kernel_op) = self.llir_graph[node].to_dialect::<dyn CubeKernelOp>() {
                 let size = kernel_op.output_size().exec(dyn_map).unwrap();
                 let buffer = self.client.empty(size * core::mem::size_of::<f32>());
                 self.buffers.insert(node, buffer);
