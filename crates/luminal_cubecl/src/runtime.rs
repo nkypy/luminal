@@ -1,5 +1,5 @@
 use crate::kernel::CubeKernelOp;
-use cubecl::{Runtime as CubeCLRuntime, prelude::*, server::Handle};
+use cubecl::{prelude::*, server::Handle};
 use itertools::Itertools;
 use luminal::{
     graph::LLIRGraph,
@@ -12,8 +12,10 @@ use luminal::{
 };
 use std::time::Duration;
 
-pub struct CubeRuntime<R: CubeCLRuntime> {
-    client: ComputeClient<R>,
+pub type CubeCLRuntime = cubecl::wgpu::WgpuRuntime;
+
+pub struct CubeRuntime {
+    client: ComputeClient<CubeCLRuntime>,
     /// Buffers for HLIR input tensors (set by user)
     pub hlir_buffers: FxHashMap<NodeIndex, Handle>,
     /// Buffers for LLIR intermediate/output tensors
@@ -22,9 +24,9 @@ pub struct CubeRuntime<R: CubeCLRuntime> {
     llir_graph: LLIRGraph,
 }
 
-impl<R: CubeCLRuntime> CubeRuntime<R> {
+impl CubeRuntime {
     pub fn new() -> Self {
-        let client = R::client(&Default::default());
+        let client = CubeCLRuntime::client(&Default::default());
         Self {
             client,
             hlir_buffers: FxHashMap::default(),
@@ -77,7 +79,7 @@ impl<R: CubeCLRuntime> CubeRuntime<R> {
     }
 }
 
-impl<R: CubeCLRuntime> Runtime for CubeRuntime<R> {
+impl Runtime for CubeRuntime {
     type Ops = crate::kernel::CubeOps;
     type CompileArg = ();
     type ExecReturn = ();
@@ -169,7 +171,7 @@ impl<R: CubeCLRuntime> Runtime for CubeRuntime<R> {
     }
 }
 
-impl<R: CubeCLRuntime> CubeRuntime<R> {
+impl CubeRuntime {
     pub fn allocate_intermediate_buffers(&mut self, dyn_map: &FxHashMap<char, usize>) {
         for node in self.llir_graph.node_indices() {
             if self.llir_graph[node].to_op::<Input>().is_some() {

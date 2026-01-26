@@ -30,8 +30,8 @@ fn cube_simple_add() {
     let b = cx.tensor(4);
     let output = (a + b).output();
 
-    cx.build_search_space::<CubeRuntime<cubecl::wgpu::WgpuRuntime>>();
-    let mut rt = CubeRuntime::<cubecl::wgpu::WgpuRuntime>::new();
+    cx.build_search_space::<CubeRuntime>();
+    let mut rt = CubeRuntime::new();
     rt.set_data(a, &[1.0, 2.0, 3.0, 4.0]);
     rt.set_data(b, &[5.0, 6.0, 7.0, 8.0]);
     rt = cx.search(rt, 5);
@@ -49,8 +49,8 @@ fn cube_simple_mul() {
     let b = cx.tensor(4);
     let output = (a * b).output();
 
-    cx.build_search_space::<CubeRuntime<cubecl::wgpu::WgpuRuntime>>();
-    let mut rt = CubeRuntime::<cubecl::wgpu::WgpuRuntime>::new();
+    cx.build_search_space::<CubeRuntime>();
+    let mut rt = CubeRuntime::new();
     rt.set_data(a, &[1.0, 2.0, 3.0, 4.0]);
     rt.set_data(b, &[5.0, 6.0, 7.0, 8.0]);
     rt = cx.search(rt, 5);
@@ -68,8 +68,8 @@ fn cube_simple_exp() {
     let input = cx.tensor(3);
     let output = input.exp().output();
 
-    cx.build_search_space::<CubeRuntime<cubecl::wgpu::WgpuRuntime>>();
-    let mut rt = CubeRuntime::<cubecl::wgpu::WgpuRuntime>::new();
+    cx.build_search_space::<CubeRuntime>();
+    let mut rt = CubeRuntime::new();
     rt.set_data(input, &[0.0, 1.0, -1.0]);
     rt = cx.search(rt, 5);
     rt.allocate_intermediate_buffers(&cx.dyn_map);
