@@ -82,7 +82,7 @@ fn reduce_matrix<F: Float>(input: &Tensor<Line<F>>, output: &mut Tensor<Line<F>>
 }
 
 pub fn launch<R: Runtime, F: Float + CubeElement>(device: &R::Device) {
-    let client = R::client(&device);
+    let client = R::client(device);
 
     let bench1 = ReductionBench::<R, F> {
         input_shape: vec![64, 256, 1024],
@@ -103,11 +103,11 @@ pub fn launch<R: Runtime, F: Float + CubeElement>(device: &R::Device) {
 
 fn main() {
     #[cfg(feature = "wgpu")]
-    launch::<cubecl::wgpu::WgpuRuntime, f32>(&Default::default());
+    launch::<cube::WgpuRuntime, f32>(&Default::default());
     #[cfg(feature = "cuda")]
-    launch::<cubecl::cuda::CudaRuntime, f32>(&Default::default());
+    launch::<cube::CudaRuntime, f32>(&Default::default());
     #[cfg(feature = "cpu")]
-    launch::<cubecl::cpu::CpuRuntime, f32>(&Default::default());
+    launch::<cube::CpuRuntime, f32>(&Default::default());
 }
 
 pub struct ReductionBench<R: Runtime, F: Float + CubeElement> {

@@ -6,6 +6,8 @@ license.workspace = true
 
 [dependencies]
 cubecl = { version = "0.9" }
+petgraph = "0.8.3"
+rustc-hash = "2.1.1"
 
 [features]
 default = ["wgpu"]
