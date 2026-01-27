@@ -5,6 +5,8 @@ use cubecl::{
     std::tensor::compact_strides,
 };
 
+use cube::op::{CustomOp, EgglogOp, HLIROp};
+
 /// Simple GpuTensor
 #[derive(Debug)]
 pub struct GpuTensor<R: Runtime, F: Float + CubeElement> {
@@ -102,8 +104,7 @@ pub fn launch<R: Runtime, F: Float + CubeElement>(device: &R::Device) {
 }
 
 fn main() {
-    use cube::op::EgglogOp;
-    let ops: Vec<cube::op::HLIROp> = vec![
+    let ops: Vec<HLIROp> = vec![
         cube::op::Input {
             node: 0,
             label: "example".to_string(),
@@ -113,6 +114,7 @@ fn main() {
     ];
     for op in &ops {
         println!("Operation name: {}", op.name());
+        println!("LLIR op: {}", op.to_llir_op());
     }
     #[cfg(feature = "wgpu")]
     launch::<cube::WgpuRuntime, f32>(&Default::default());

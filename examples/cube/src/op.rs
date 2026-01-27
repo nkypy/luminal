@@ -9,7 +9,14 @@ pub trait EgglogOp: std::fmt::Debug {
     fn name(&self) -> &str;
 }
 
-#[enum_dispatch(EgglogOp)]
+#[enum_dispatch]
+pub trait CustomOp: std::fmt::Debug {
+    fn to_llir_op(&self) -> &str {
+        "custom_op"
+    }
+}
+
+#[enum_dispatch(EgglogOp, CustomOp)]
 #[derive(Debug)]
 pub enum HLIROp {
     Input(Input),
@@ -28,6 +35,8 @@ impl EgglogOp for Input {
     }
 }
 
+impl CustomOp for Input {}
+
 #[derive(Debug)]
 pub struct Output {
     pub node: usize,
@@ -38,3 +47,5 @@ impl EgglogOp for Output {
         "output"
     }
 }
+
+impl CustomOp for Output {}
