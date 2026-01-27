@@ -102,6 +102,18 @@ pub fn launch<R: Runtime, F: Float + CubeElement>(device: &R::Device) {
 }
 
 fn main() {
+    use cube::op::EgglogOp;
+    let ops: Vec<cube::op::HLIROp> = vec![
+        cube::op::Input {
+            node: 0,
+            label: "example".to_string(),
+        }
+        .into(),
+        cube::op::Output { node: 1 }.into(),
+    ];
+    for op in &ops {
+        println!("Operation name: {}", op.name());
+    }
     #[cfg(feature = "wgpu")]
     launch::<cube::WgpuRuntime, f32>(&Default::default());
     #[cfg(feature = "cuda")]
