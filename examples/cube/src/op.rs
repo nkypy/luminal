@@ -17,13 +17,20 @@ pub trait CustomOp: std::fmt::Debug {
 }
 
 #[enum_dispatch(EgglogOp, CustomOp)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum HLIROp {
     Input(Input),
     Output(Output),
 }
 
-#[derive(Debug)]
+#[enum_dispatch(EgglogOp, CustomOp)]
+#[derive(Clone, Debug)]
+pub enum LLIROp {
+    Input(Input),
+    Output(Output),
+}
+
+#[derive(Clone, Debug)]
 pub struct Input {
     pub node: usize,
     pub label: String,
@@ -37,7 +44,7 @@ impl EgglogOp for Input {
 
 impl CustomOp for Input {}
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Output {
     pub node: usize,
 }

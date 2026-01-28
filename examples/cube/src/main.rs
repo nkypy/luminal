@@ -5,7 +5,11 @@ use cubecl::{
     std::tensor::compact_strides,
 };
 
-use cube::op::{CustomOp, EgglogOp, HLIROp};
+use cube::{
+    WgpuRuntime,
+    op::{CustomOp, EgglogOp, HLIROp},
+    prelude::Graph,
+};
 
 /// Simple GpuTensor
 #[derive(Debug)]
@@ -104,6 +108,13 @@ pub fn launch<R: Runtime, F: Float + CubeElement>(device: &R::Device) {
 }
 
 fn main() {
+    #[cfg(feature = "wgpu")]
+    launch::<cube::WgpuRuntime, f32>(&Default::default());
+    #[cfg(feature = "cuda")]
+    launch::<cube::CudaRuntime, f32>(&Default::default());
+    #[cfg(feature = "cpu")]
+    launch::<cube::CpuRuntime, f32>(&Default::default());
+
     let ops: Vec<HLIROp> = vec![
         cube::op::Input {
             node: 0,
@@ -116,12 +127,12 @@ fn main() {
         println!("Operation name: {}", op.name());
         println!("LLIR op: {}", op.to_llir_op());
     }
-    #[cfg(feature = "wgpu")]
-    launch::<cube::WgpuRuntime, f32>(&Default::default());
-    #[cfg(feature = "cuda")]
-    launch::<cube::CudaRuntime, f32>(&Default::default());
-    #[cfg(feature = "cpu")]
-    launch::<cube::CpuRuntime, f32>(&Default::default());
+
+    let mut cx = Graph::<WgpuRuntime, f32, HLIROp, HLIROp>::new();
+    let input = cx.tensor("input", vec![1, 2, 3], vec![1, 2, 3]);
+    let output = cx.tensor("output", vec![1, 2, 3], vec![1, 2, 3]);
+
+    println!("input {:?}, output {:?}", input, output);
 }
 
 pub struct ReductionBench<R: Runtime, F: Float + CubeElement> {
