@@ -30,7 +30,7 @@ fn op_dyn_trait_benchmark(c: &mut Criterion) {
     c.bench_with_input(BenchmarkId::new("op_dyn_trait", SIZE), &ops, |b, ops| {
         b.iter(|| {
             for op in ops {
-                op.name();
+                op.term();
             }
         })
     });
@@ -55,7 +55,7 @@ fn op_enum_dispatch_benchmark(c: &mut Criterion) {
         |b, ops| {
             b.iter(|| {
                 for op in ops {
-                    op.name();
+                    op.term();
                 }
             })
         },

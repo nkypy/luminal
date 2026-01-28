@@ -124,7 +124,7 @@ fn main() {
         cube::op::Output { node: 1 }.into(),
     ];
     for op in &ops {
-        println!("Operation name: {}", op.name());
+        println!("Operation term: {:?}", op.term());
         println!("LLIR op: {}", op.to_llir_op());
     }
 

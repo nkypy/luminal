@@ -16,7 +16,7 @@ pub enum OpParam {
     IList,
 }
 
-impl std::fmt::Display for OpParam {
+impl std::fmt::Debug for OpParam {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             OpParam::EList => write!(f, "EList"),
@@ -33,10 +33,7 @@ impl std::fmt::Display for OpParam {
 
 #[enum_dispatch]
 pub trait EgglogOp: std::fmt::Debug {
-    fn name(&self) -> &str;
-    fn term(&self) -> (String, Vec<OpParam>) {
-        (self.name().to_string(), vec![])
-    }
+    fn term(&self) -> (String, Vec<OpParam>);
     fn rewrites(&self) -> Vec<String> {
         vec![]
     }
@@ -94,8 +91,11 @@ pub struct Input {
 }
 
 impl EgglogOp for Input {
-    fn name(&self) -> &str {
-        &self.label
+    fn term(&self) -> (String, Vec<OpParam>) {
+        (
+            "Input".to_string(),
+            vec![OpParam::Int, OpParam::Str, OpParam::Dty],
+        )
     }
 }
 
@@ -115,8 +115,8 @@ pub struct Output {
 }
 
 impl EgglogOp for Output {
-    fn name(&self) -> &str {
-        "output"
+    fn term(&self) -> (String, Vec<OpParam>) {
+        ("Output".to_string(), vec![OpParam::Input, OpParam::Int])
     }
 }
 
