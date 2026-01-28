@@ -6,19 +6,21 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     graph::Graph,
-    op::{CustomOp, EgglogOp},
+    op::{CustomOp, EgglogOp, HLIROp, LLIROp},
 };
 
 #[derive(Clone, Debug)]
-pub struct GraphTensor<R, F, E, C>
+pub struct GraphTensor<R, F, H, L, E, C>
 where
     R: Runtime,
     F: Float + CubeElement,
+    H: HLIROp,
+    L: LLIROp,
     E: EgglogOp,
     C: CustomOp,
 {
     pub id: NodeIndex,
-    pub graph_ref: *mut Graph<R, F, E, C>,
+    pub graph_ref: *mut Graph<R, F, H, L, E, C>,
     pub data: Handle,
     pub shape: Vec<usize>,
     pub strides: Vec<usize>,

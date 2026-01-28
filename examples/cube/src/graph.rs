@@ -4,19 +4,21 @@ use cubecl::{
     client::ComputeClient,
     prelude::{CubeElement, Float, Runtime},
 };
-use petgraph::stable_graph::StableGraph;
+use petgraph::{graph::NodeIndex, stable_graph::StableGraph};
 use rustc_hash::FxHashMap;
 
 use crate::{
-    op::{CustomOp, EgglogOp, HLIROp, Input, LLIROp},
+    op::{CustomOp, EgglogOp, HLIROp, LLIROp},
     tensor::GraphTensor,
 };
 
 #[derive(Clone)]
-pub struct Graph<R, F, E, C>
+pub struct Graph<R, F, H, L, E, C>
 where
     R: Runtime,
     F: Float + CubeElement,
+    H: HLIROp,
+    L: LLIROp,
     E: EgglogOp,
     C: CustomOp,
 {
@@ -24,8 +26,8 @@ where
     /// A map of dynamic dimensions to concrete dimension sizes
     pub dyn_map: FxHashMap<char, usize>,
     /// Edge weights: (Input index, Output index, Input shape)
-    pub graph: StableGraph<HLIROp, Vec<usize>>,
-    pub llir_graph: StableGraph<LLIROp, ()>,
+    pub graph: StableGraph<H, Vec<usize>>,
+    pub llir_graph: StableGraph<L, ()>,
     // /// E-Graph search space
     // egraph: Option<SerializedEGraph>,
     /// Available ops
@@ -36,10 +38,12 @@ where
     _f: PhantomData<F>,
 }
 
-impl<R, F, E, C> Graph<R, F, E, C>
+impl<R, F, H, L, E, C> Graph<R, F, H, L, E, C>
 where
     R: Runtime,
     F: Float + CubeElement,
+    H: HLIROp,
+    L: LLIROp,
     E: EgglogOp,
     C: CustomOp,
 {
@@ -60,17 +64,12 @@ where
     /// Create a new tensor with shape S and a name. This name will show up on the graph when displayed
     pub fn tensor(
         &mut self,
-        name: impl ToString,
+        op: impl Into<H>,
         data: Vec<F>,
         shape: Vec<usize>,
         strides: Vec<usize>,
-    ) -> GraphTensor<R, F, E, C> {
-        let node = Input {
-            node: 0,
-            label: name.to_string(),
-        }
-        .into();
-        let id = self.graph.add_node(node);
+    ) -> GraphTensor<R, F, H, L, E, C> {
+        let id = self.graph.add_node(op.into());
         let data = self.client.create_from_slice(F::as_bytes(&data));
         GraphTensor {
             id,
@@ -81,7 +80,7 @@ where
         }
     }
 
-    // pub fn add_op(&mut self, op: E, id: NodeIndex, shape: Vec<usize>) {
-    //     // self.graph.add_node(Box::new(op));
-    // }
+    pub fn add_op(&mut self, op: impl Into<H>, _id: NodeIndex, _shape: Vec<usize>) {
+        self.graph.add_node(op.into());
+    }
 }

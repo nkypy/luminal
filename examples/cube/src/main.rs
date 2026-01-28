@@ -7,7 +7,7 @@ use cubecl::{
 
 use cube::{
     WgpuRuntime,
-    op::{CustomOp, EgglogOp, HLIROp},
+    op::{CustomOp, EgglogOp, HLIROps, Input, LLIROps, Output},
     prelude::Graph,
 };
 
@@ -115,7 +115,7 @@ fn main() {
     #[cfg(feature = "cpu")]
     launch::<cube::CpuRuntime, f32>(&Default::default());
 
-    let ops: Vec<HLIROp> = vec![
+    let ops: Vec<HLIROps> = vec![
         cube::op::Input {
             node: 0,
             label: "example".to_string(),
@@ -128,15 +128,19 @@ fn main() {
         println!("LLIR op: {}", op.to_llir_op());
     }
 
-    let mut cx = Graph::<WgpuRuntime, f32, HLIROp, HLIROp>::new(&Default::default());
+    let mut cx =
+        Graph::<WgpuRuntime, f32, HLIROps, LLIROps, HLIROps, LLIROps>::new(&Default::default());
     let input = cx.tensor(
-        "input",
+        Input {
+            node: 0,
+            label: "example".to_string(),
+        },
         vec![1.0f32, 2.0f32, 3.0f32],
         vec![1, 2, 3],
         vec![1, 2, 3],
     );
     let output = cx.tensor(
-        "output",
+        Output { node: 1 },
         vec![1.0f32, 2.0f32, 3.0f32],
         vec![1, 2, 3],
         vec![1, 2, 3],

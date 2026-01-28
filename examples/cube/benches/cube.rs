@@ -2,7 +2,7 @@ use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
-use cube::op::{EgglogOp, HLIROp, Input, Output};
+use cube::op::{EgglogOp, HLIROps, Input, Output};
 
 // 要测试的函数
 fn fibonacci(n: u64) -> u64 {
@@ -38,7 +38,7 @@ fn op_dyn_trait_benchmark(c: &mut Criterion) {
 
 fn op_enum_dispatch_benchmark(c: &mut Criterion) {
     const SIZE: usize = 512;
-    let mut ops: Vec<HLIROp> = Vec::with_capacity(SIZE * 2);
+    let mut ops: Vec<HLIROps> = Vec::with_capacity(SIZE * 2);
     for i in 0..SIZE {
         ops.push(
             Input {
