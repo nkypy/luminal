@@ -1,4 +1,7 @@
-use cubecl::prelude::{CubeElement, Float, Runtime};
+use cubecl::{
+    prelude::{CubeElement, Float, Runtime},
+    server::Handle,
+};
 use petgraph::graph::NodeIndex;
 
 use crate::{
@@ -16,6 +19,7 @@ where
 {
     pub id: NodeIndex,
     pub graph_ref: *mut Graph<R, F, E, C>,
+    pub data: Handle,
     pub shape: Vec<usize>,
     pub strides: Vec<usize>,
 }

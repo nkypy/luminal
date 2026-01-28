@@ -1,6 +1,9 @@
 use std::marker::PhantomData;
 
-use cubecl::prelude::{CubeElement, Float, Runtime};
+use cubecl::{
+    client::ComputeClient,
+    prelude::{CubeElement, Float, Runtime},
+};
 use petgraph::stable_graph::StableGraph;
 use rustc_hash::FxHashMap;
 
@@ -9,7 +12,7 @@ use crate::{
     tensor::GraphTensor,
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
 pub struct Graph<R, F, E, C>
 where
     R: Runtime,
@@ -17,6 +20,7 @@ where
     E: EgglogOp,
     C: CustomOp,
 {
+    pub client: ComputeClient<R>,
     /// A map of dynamic dimensions to concrete dimension sizes
     pub dyn_map: FxHashMap<char, usize>,
     /// Edge weights: (Input index, Output index, Input shape)
@@ -40,8 +44,9 @@ where
     C: CustomOp,
 {
     /// Create a new graph
-    pub fn new() -> Self {
+    pub fn new(device: &R::Device) -> Self {
         Self {
+            client: R::client(device),
             dyn_map: FxHashMap::default(),
             graph: StableGraph::new(),
             llir_graph: StableGraph::new(),
@@ -56,6 +61,7 @@ where
     pub fn tensor(
         &mut self,
         name: impl ToString,
+        data: Vec<F>,
         shape: Vec<usize>,
         strides: Vec<usize>,
     ) -> GraphTensor<R, F, E, C> {
@@ -65,9 +71,11 @@ where
         }
         .into();
         let id = self.graph.add_node(node);
+        let data = self.client.create_from_slice(F::as_bytes(&data));
         GraphTensor {
             id,
             graph_ref: self,
+            data,
             shape,
             strides,
         }

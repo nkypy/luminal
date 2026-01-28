@@ -128,9 +128,19 @@ fn main() {
         println!("LLIR op: {}", op.to_llir_op());
     }
 
-    let mut cx = Graph::<WgpuRuntime, f32, HLIROp, HLIROp>::new();
-    let input = cx.tensor("input", vec![1, 2, 3], vec![1, 2, 3]);
-    let output = cx.tensor("output", vec![1, 2, 3], vec![1, 2, 3]);
+    let mut cx = Graph::<WgpuRuntime, f32, HLIROp, HLIROp>::new(&Default::default());
+    let input = cx.tensor(
+        "input",
+        vec![1.0f32, 2.0f32, 3.0f32],
+        vec![1, 2, 3],
+        vec![1, 2, 3],
+    );
+    let output = cx.tensor(
+        "output",
+        vec![1.0f32, 2.0f32, 3.0f32],
+        vec![1, 2, 3],
+        vec![1, 2, 3],
+    );
 
     println!("input {:?}, output {:?}", input, output);
 }
