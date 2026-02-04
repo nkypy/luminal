@@ -1,4 +1,14 @@
 use crate::{egglog_utils, hlir::CustomOpHLIR, op::*, prelude::*};
+use crate::{
+    egglog_utils::SerializedEGraph,
+    op::{EgglogOp, IntoEgglogOp, LLIROp},
+};
+use colored::Colorize;
+use egglog::{CommandOutput, ast::Span, prelude::RustSpan, var};
+use egraph_serialize::{ClassId, NodeId};
+use itertools::Itertools;
+use petgraph::{Direction, stable_graph::StableGraph, visit::EdgeRef};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{
     any::TypeId,
     fmt::Debug,
@@ -6,15 +16,7 @@ use std::{
     ops::{Deref, DerefMut},
     sync::Arc,
 };
-
-use colored::Colorize;
-use egglog::{CommandOutput, prelude::RustSpan, var};
-use egglog_ast::span::Span;
-use egraph_serialize::{ClassId, NodeId};
-use itertools::Itertools;
-use petgraph::{Direction, stable_graph::StableGraph, visit::EdgeRef};
-use rustc_hash::{FxHashMap, FxHashSet};
-use tracing::info;
+use tracing::{self, info};
 
 pub type LLIRGraph = StableGraph<LLIROp, ()>;
 pub type HLIRGraph = StableGraph<Box<dyn HLIROp>, ShapeTracker>;
@@ -154,17 +156,23 @@ impl Graph {
         let mut ops = Rt::Ops::into_vec();
         ops.extend(<crate::hlir::HLIROps as IntoEgglogOp>::into_vec());
         let (program, root) = hlir_to_egglog(self);
-        println!("program {:?}", program);
-        println!("root {:?}", root);
-        self.egraph = Some(
-            run_egglog(
-                &program,
-                &root,
-                &ops,
-                TypeId::of::<Rt>() != TypeId::of::<NativeRuntime>(), // need to ignore hlir op cleanups if we're on native runtime
-            )
-            .unwrap(),
-        );
+        let cleanup_hlir = TypeId::of::<Rt>() != TypeId::of::<NativeRuntime>(); // need to ignore hlir op cleanups if we're on native runtime
+        self.egraph = Some(run_egglog(&program, &root, &ops, cleanup_hlir).unwrap());
+        self.ops = Some(ops);
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn build_search_space_exclude_ops<Rt: Runtime + 'static, Ex: IntoEgglogOp>(&mut self) {
+        let exclude_ops = Ex::into_vec()
+            .into_iter()
+            .map(|e| e.term().0)
+            .collect::<FxHashSet<_>>();
+        let mut ops = Rt::Ops::into_vec();
+        ops.retain(|o| !exclude_ops.contains(&o.term().0));
+        ops.extend(<crate::hlir::HLIROps as IntoEgglogOp>::into_vec());
+        let (program, root) = hlir_to_egglog(self);
+        let cleanup_hlir = TypeId::of::<Rt>() != TypeId::of::<NativeRuntime>(); // need to ignore hlir op cleanups if we're on native runtime
+        self.egraph = Some(run_egglog(&program, &root, &ops, cleanup_hlir).unwrap());
         self.ops = Some(ops);
     }
 
@@ -406,12 +414,11 @@ fn run_egglog(
     println!("code {:?}", code);
     let mut egraph = egglog::EGraph::default();
     let commands = egraph.parser.get_program_from_string(None, &code)?;
-    println!("commands {:?}", commands);
-    println!("{}", "Egglog running...".green());
+    info!("{}", "Egglog running...".green());
     let _outputs = egraph.run_program(commands)?;
-    println!("{}", "---- Egglog Rule Matches ----".green());
+    info!("{}", "---- Egglog Rule Matches ----".green());
     let run_report = egraph.get_overall_run_report();
-    println!(
+    info!(
         "{}",
         run_report
             .num_matches_per_rule
@@ -427,7 +434,7 @@ fn run_egglog(
             .join("\n")
             .green()
     );
-    println!(
+    info!(
         "{}",
         format!(
             "---- Egglog Took {} ----",
@@ -435,7 +442,15 @@ fn run_egglog(
         )
         .green()
     );
-
+    // if enabled!(Level::DEBUG) {
+    //     let log_dir = Path::new("egraph");
+    //     if log_dir.exists() {
+    //         fs::remove_dir_all(log_dir).unwrap();
+    //     }
+    //     fs::create_dir(log_dir).unwrap();
+    //     fs::write(log_dir.join("egraph.dot"), egraph.to_dot().unwrap()).unwrap();
+    //     fs::write(log_dir.join("egraph.html"), egraph.to_html().unwrap()).unwrap();
+    // }
     let (sort, value) = egraph.eval_expr(&var!(root))?;
     let s = egraph.serialize(egglog::SerializeConfig {
         root_eclasses: vec![(sort, value)],
@@ -577,6 +592,7 @@ pub fn extract_dtype<'a>(egraph: &'a SerializedEGraph, node: &'a NodeId) -> DTyp
         "F16" => DType::F16,
         "Bf16" => DType::Bf16,
         "Int" => DType::Int,
+        "Bool" => DType::Bool,
         other => panic!("unknown dtype {other}"),
     }
 }
@@ -706,6 +722,14 @@ pub fn egglog_to_llir(
     limit: usize,
 ) -> Vec<LLIRGraph> {
     // Get maps for all e-classes to e-node options
+    // if enabled!(Level::DEBUG) {
+    //     let log_dir = Path::new("llir_graphs");
+
+    //     if log_dir.exists() {
+    //         fs::remove_dir_all(log_dir).unwrap();
+    //     }
+    //     fs::create_dir(log_dir).unwrap();
+    // }
     let mut choices = vec![FxHashMap::default()];
     for (eclass, (label, enodes)) in &egraph.eclasses {
         if !label.contains("IR") && !label.contains("IList") {
@@ -728,7 +752,7 @@ pub fn egglog_to_llir(
     let mut graphs = vec![];
     let mut c = FxHashMap::default();
     let mut lc = FxHashMap::default();
-    for choice in choices {
+    for choice in &choices {
         // Make reachability set from root
         let mut reachable = FxHashSet::default();
         reachable.insert(choice[&egraph.roots[0]]);
@@ -810,8 +834,28 @@ pub fn egglog_to_llir(
             }
         }
         for (src, dest) in edges_to_place {
-            graph.add_edge(enode_to_node[src], enode_to_node[dest], ());
+            let src_node_id = *enode_to_node.get(&src).unwrap_or_else(|| {
+                panic!(
+                    "Source enode {:?} not found in enode_to_node map during edge placement",
+                    src
+                )
+            });
+            let dest_node_id = *enode_to_node.get(&dest).unwrap_or_else(|| {
+                panic!(
+                    "Destination enode {:?} not found in enode_to_node map during edge placement",
+                    dest
+                )
+            });
+
+            graph.add_edge(src_node_id, dest_node_id, ());
         }
+        // if enabled!(Level::TRACE) {
+        //     fs::write(
+        //         format!("llir_graphs/llir_{}.dot", i),
+        //         graph.clone().to_dot().unwrap(),
+        //     )
+        //     .unwrap();
+        // }
 
         graphs.push(graph);
     }

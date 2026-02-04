@@ -50,6 +50,10 @@ impl<R: Runtime, F: Float + CubeElement> GpuTensor<R, F> {
         }
     }
 
+    pub fn output(&self) -> Self {
+        self.clone()
+    }
+
     /// Create an empty GpuTensor with a shape
     pub fn empty(shape: Vec<usize>, client: &ComputeClient<R>) -> Self {
         let size = shape.iter().product::<usize>() * core::mem::size_of::<F>();
@@ -128,19 +132,15 @@ fn main() {
         println!("LLIR op: {}", op.to_llir_op());
     }
 
-    let mut cx =
-        Graph::<WgpuRuntime, f32, HLIROps, LLIROps, HLIROps, LLIROps>::new(&Default::default());
+    let mut cx = Graph::<WgpuRuntime, f32, HLIROps, LLIROps>::new(&Default::default());
     let input = cx.tensor(
-        Input {
-            node: 0,
-            label: "example".to_string(),
-        },
+        "input",
         vec![1.0f32, 2.0f32, 3.0f32],
         vec![1, 2, 3],
         vec![1, 2, 3],
     );
     let output = cx.tensor(
-        Output { node: 1 },
+        "output",
         vec![1.0f32, 2.0f32, 3.0f32],
         vec![1, 2, 3],
         vec![1, 2, 3],

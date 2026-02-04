@@ -3,6 +3,9 @@ mod tensor;
 
 pub mod op;
 
+#[cfg(test)]
+mod tests;
+
 #[cfg(feature = "cpu")]
 pub use cubecl::cpu::CpuRuntime;
 #[cfg(feature = "cuda")]
